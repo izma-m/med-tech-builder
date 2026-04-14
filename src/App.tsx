@@ -12,6 +12,8 @@ import Progress from "./pages/Progress";
 import Saved from "./pages/Saved";
 import SettingsPage from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import Community from "./pages/Community";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
