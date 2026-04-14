@@ -124,6 +124,12 @@ const Simulation = () => {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => navigate("/community")} className="text-muted-foreground hover:text-primary text-xs hidden sm:flex">
+            <MessageSquare className="h-4 w-4 mr-1" /> Discuss
+          </Button>
+          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-neon-blue text-xs hidden sm:flex">
+            <Share2 className="h-4 w-4 mr-1" /> Share
+          </Button>
           <Button variant="ghost" size="icon" onClick={() => setIsPlaying(!isPlaying)} className="text-muted-foreground">
             {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </Button>
