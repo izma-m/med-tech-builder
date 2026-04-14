@@ -12,6 +12,8 @@ import Progress from "./pages/Progress";
 import Saved from "./pages/Saved";
 import SettingsPage from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import Community from "./pages/Community";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +33,8 @@ const App = () => (
           <Route path="/progress" element={<Progress />} />
           <Route path="/saved" element={<Saved />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/community" element={<Community />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
