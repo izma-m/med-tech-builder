@@ -7,6 +7,7 @@ const navItems = [
   { label: "Home", icon: Home, path: "/dashboard" },
   { label: "Simulations", icon: Monitor, path: "/simulation" },
   { label: "Circuit Builder", icon: CircuitBoard, path: "/circuit-builder" },
+  { label: "Community", icon: Activity, path: "/community" },
   { label: "My Progress", icon: BarChart3, path: "/progress" },
   { label: "Saved Projects", icon: FolderOpen, path: "/saved" },
   { label: "Settings", icon: Settings, path: "/settings" },
@@ -113,7 +114,10 @@ const Dashboard = () => {
               <Bell className="h-5 w-5" />
               <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
             </button>
-            <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-sm font-semibold text-primary">
+            <div
+              onClick={() => navigate("/profile")}
+              className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-sm font-semibold text-primary cursor-pointer hover:bg-primary/30 transition-colors"
+            >
               J
             </div>
           </div>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Play, Pause, RotateCcw, AlertTriangle, Zap, Radio, Filter, Monitor, BookOpen, Code, Lightbulb, CircuitBoard } from "lucide-react";
+import { ArrowLeft, Play, Pause, RotateCcw, AlertTriangle, Zap, Radio, Filter, Monitor, BookOpen, Code, Lightbulb, CircuitBoard, MessageSquare, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
