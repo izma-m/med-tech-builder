@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Activity } from "lucide-react";
 import EcgBackground from "@/components/EcgBackground";
 
 const Login = () => {
@@ -16,53 +15,54 @@ const Login = () => {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-background ecg-grid">
+    <div className="relative min-h-screen flex items-center justify-center bg-background notebook-grid">
       <EcgBackground />
       <div className="relative z-10 w-full max-w-md px-6">
-        <div className="bg-card/80 backdrop-blur-xl border border-border rounded-2xl p-8 glow-green">
-          <div className="flex items-center justify-center gap-2 mb-8">
-            <Activity className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-bold text-foreground glow-text-green">ClinSim</h1>
+        <div className="bg-card border border-border rounded-md p-10">
+          <div className="text-center mb-8">
+            <p className="accent-italic text-primary text-sm tracking-wide mb-1">Lab Notebook · v1</p>
+            <h1 className="text-3xl text-foreground font-medium">ClinSim</h1>
+            <div className="w-12 h-px bg-border mx-auto mt-3" />
           </div>
 
-          <h2 className="text-lg font-semibold text-foreground text-center mb-1">Welcome back</h2>
-          <p className="text-muted-foreground text-sm text-center mb-6">Sign in to continue your simulations</p>
+          <h2 className="accent-italic text-base text-ink-muted text-center mb-1">Welcome back</h2>
+          <p className="text-sm text-muted-foreground text-center mb-8">Sign in to continue your experiments</p>
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <label className="text-sm text-muted-foreground mb-1.5 block">Email</label>
+              <label className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">Email</label>
               <Input
                 type="email"
                 placeholder="you@university.edu"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-muted/50 border-border focus:border-primary"
+                className="field-underline text-foreground"
               />
             </div>
             <div>
-              <label className="text-sm text-muted-foreground mb-1.5 block">Password</label>
+              <label className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">Password</label>
               <Input
                 type="password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="bg-muted/50 border-border focus:border-primary"
+                className="field-underline text-foreground"
               />
             </div>
 
             <div className="text-right">
-              <button type="button" className="text-xs text-primary hover:underline">Forgot Password?</button>
+              <button type="button" className="text-xs text-primary hover:underline accent-italic">Forgot password?</button>
             </div>
 
-            <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold">
-              Login
+            <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-md">
+              Sign In
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
-            <span className="text-sm text-muted-foreground">Don't have an account? </span>
-            <button onClick={() => navigate("/signup")} className="text-sm text-primary hover:underline font-medium">
-              Sign Up
+          <div className="mt-8 text-center">
+            <span className="text-sm text-muted-foreground">New here? </span>
+            <button onClick={() => navigate("/signup")} className="text-sm text-primary hover:underline accent-italic">
+              Create an account
             </button>
           </div>
         </div>

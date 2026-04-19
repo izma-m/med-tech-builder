@@ -1,64 +1,55 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Hash, Volume2, Pin, Search, Send, Smile, Paperclip, Code,
-  Users, Crown, Shield, GraduationCap, ChevronDown, Plus,
-  Heart, Brain, Scan, CircuitBoard, Briefcase, MessageSquare,
-  ThumbsUp, Flame, Lightbulb, Reply, ArrowLeft, Activity
+  Hash, Search, Send, Paperclip, Code, Pin, Plus, ArrowLeft,
+  Heart, Scan, CircuitBoard, Briefcase, Activity, Reply, ThumbsUp, Lightbulb,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 
 const communities = [
-  { id: "general", name: "General Biomedical", icon: Activity, color: "text-primary" },
-  { id: "ecg", name: "ECG & Signals", icon: Heart, color: "text-primary" },
-  { id: "imaging", name: "Medical Imaging", icon: Scan, color: "text-neon-cyan" },
-  { id: "circuits", name: "Circuit Design", icon: CircuitBoard, color: "text-neon-blue" },
-  { id: "careers", name: "Internship & Careers", icon: Briefcase, color: "text-muted-foreground" },
+  { id: "general", name: "General Biomedical", icon: Activity },
+  { id: "ecg", name: "ECG & Signals", icon: Heart },
+  { id: "imaging", name: "Medical Imaging", icon: Scan },
+  { id: "circuits", name: "Circuit Design", icon: CircuitBoard },
+  { id: "careers", name: "Internship & Careers", icon: Briefcase },
 ];
 
-const channels = [
-  { id: "general", name: "general", icon: Hash },
-  { id: "questions", name: "questions", icon: Hash },
-  { id: "projects", name: "projects", icon: Hash },
-  { id: "resources", name: "resources", icon: Hash },
-  { id: "announcements", name: "announcements", icon: Volume2 },
-];
+const channels = ["general", "questions", "projects", "resources", "announcements"];
 
 const mockMessages = [
   {
-    id: 1, user: "Dr. Sarah Chen", avatar: "SC", role: "Mentor",
-    time: "Today at 2:34 PM", pinned: true,
-    text: "Welcome to the ECG & Signals community! 🎉 Feel free to ask questions about signal processing, circuit design, or any simulation-related topics.",
-    reactions: [{ emoji: "👍", count: 12 }, { emoji: "🔥", count: 5 }],
+    id: 1, user: "Dr. Sarah Chen", role: "Mentor",
+    time: "2:34 PM", pinned: true,
+    text: "Welcome to ECG & Signals. Feel free to post questions about signal processing, circuit design, or any simulation work.",
   },
   {
-    id: 2, user: "Ahmed Khan", avatar: "AK", role: "Student",
-    time: "Today at 3:12 PM",
-    text: "Has anyone tried the new arrhythmia simulation mode? The waveform patterns are really accurate compared to the textbook!",
-    reactions: [{ emoji: "💡", count: 3 }],
+    id: 2, user: "Ahmed Khan", role: "Student",
+    time: "3:12 PM",
+    text: "Has anyone tried the new arrhythmia simulation mode? The waveform patterns match clinical data very well.",
   },
   {
-    id: 3, user: "Prof. Williams", avatar: "PW", role: "Admin",
-    time: "Today at 3:45 PM",
-    text: "Great observation Ahmed! The arrhythmia model uses actual clinical data patterns. Try adjusting the heart rate slider to see how different rates affect the QRS complex morphology.",
-    reactions: [{ emoji: "👍", count: 8 }, { emoji: "💡", count: 4 }],
+    id: 3, user: "Prof. Williams", role: "Admin",
+    time: "3:45 PM",
+    text: "Good observation, Ahmed. Try adjusting the heart rate slider to see how QRS morphology changes across rates.",
+    replies: [
+      { user: "Ahmed Khan", time: "3:48 PM", text: "Will do — thanks. I'll log my findings in #projects." },
+    ],
   },
   {
-    id: 4, user: "Maria Lopez", avatar: "ML", role: "Student",
-    time: "Today at 4:02 PM",
-    text: "I built a bandpass filter circuit in the Circuit Builder — sharing it here for anyone working on the ECG lab assignment.",
-    reactions: [{ emoji: "🔥", count: 7 }, { emoji: "👍", count: 3 }],
-    hasCode: true, code: `// Bandpass Filter: 0.05 - 100 Hz\nconst fc_low = 0.05;\nconst fc_high = 100;\nconst order = 2; // Butterworth`,
+    id: 4, user: "Maria Lopez", role: "Student",
+    time: "4:02 PM",
+    text: "Sharing my bandpass filter circuit for anyone working on the ECG lab assignment.",
+    code: `// Bandpass Filter: 0.05 – 100 Hz
+const fc_low  = 0.05;
+const fc_high = 100;
+const order   = 2; // Butterworth`,
   },
   {
-    id: 5, user: "James Patel", avatar: "JP", role: "Student",
-    time: "Today at 4:30 PM",
-    text: "Can someone explain the difference between the INA128 and AD620 instrumentation amplifiers for ECG applications?",
-    reactions: [],
+    id: 5, user: "James Patel", role: "Student",
+    time: "4:30 PM",
+    text: "Can someone explain the difference between INA128 and AD620 instrumentation amplifiers for ECG applications?",
   },
 ];
 
@@ -69,13 +60,12 @@ const onlineMembers = [
   { name: "Maria Lopez", role: "Student", status: "online" },
   { name: "James Patel", role: "Student", status: "idle" },
   { name: "Fatima Ali", role: "Student", status: "online" },
-  { name: "David Kim", role: "Mentor", status: "idle" },
 ];
 
-const roleConfig: Record<string, { color: string; icon: typeof Crown }> = {
-  Admin: { color: "text-destructive", icon: Crown },
-  Mentor: { color: "text-neon-blue", icon: Shield },
-  Student: { color: "text-primary", icon: GraduationCap },
+const roleColor: Record<string, string> = {
+  Admin: "text-destructive",
+  Mentor: "text-primary",
+  Student: "text-foreground",
 };
 
 const Community = () => {
@@ -88,220 +78,189 @@ const Community = () => {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      {/* Server icons sidebar */}
-      <div className="w-[72px] bg-card/50 border-r border-border flex flex-col items-center py-3 gap-2 shrink-0">
-        <Button
-          variant="ghost" size="icon"
-          onClick={() => navigate("/dashboard")}
-          className="w-12 h-12 rounded-2xl bg-muted hover:bg-primary/20 hover:rounded-xl transition-all mb-2"
-        >
-          <ArrowLeft className="h-5 w-5 text-muted-foreground" />
-        </Button>
-        <div className="w-8 h-[2px] bg-border rounded-full mb-1" />
-        {communities.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => { setActiveCommunity(c.id); setActiveChannel("general"); }}
-            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all hover:rounded-xl ${
-              activeCommunity === c.id
-                ? "bg-primary/20 rounded-xl"
-                : "bg-muted hover:bg-muted/80"
-            }`}
-            title={c.name}
-          >
-            <c.icon className={`h-5 w-5 ${activeCommunity === c.id ? c.color : "text-muted-foreground"}`} />
-          </button>
-        ))}
-        <div className="w-8 h-[2px] bg-border rounded-full my-1" />
-        <button className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center hover:bg-primary/20 hover:rounded-xl transition-all text-primary">
-          <Plus className="h-5 w-5" />
-        </button>
-      </div>
-
-      {/* Channels sidebar */}
-      <div className="w-60 bg-card border-r border-border flex flex-col shrink-0">
-        <div className="p-4 border-b border-border">
-          <button className="flex items-center justify-between w-full">
-            <h2 className="font-semibold text-foreground text-sm">{currentCommunity?.name}</h2>
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          </button>
+      {/* Communities rail */}
+      <div className="w-56 bg-sidebar border-r border-sidebar-border flex flex-col shrink-0">
+        <div className="p-4 border-b border-sidebar-border flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")} className="h-8 w-8 text-muted-foreground hover:bg-accent">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <p className="accent-italic text-sm text-foreground">Communities</p>
         </div>
         <ScrollArea className="flex-1">
           <div className="p-2 space-y-0.5">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-2">
-              Text Channels
-            </p>
-            {channels.map((ch) => (
+            {communities.map((c) => (
               <button
-                key={ch.id}
-                onClick={() => setActiveChannel(ch.id)}
-                className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors ${
-                  activeChannel === ch.id
-                    ? "bg-muted text-foreground font-medium"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                key={c.id}
+                onClick={() => { setActiveCommunity(c.id); setActiveChannel("general"); }}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors ${
+                  activeCommunity === c.id
+                    ? "bg-accent text-accent-foreground font-medium"
+                    : "text-sidebar-foreground hover:bg-accent"
                 }`}
               >
-                <ch.icon className="h-4 w-4 shrink-0" />
-                {ch.name}
+                <c.icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+                <span className="truncate">{c.name}</span>
+              </button>
+            ))}
+            <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-accent transition-colors mt-2">
+              <Plus className="h-3.5 w-3.5" />
+              <span className="accent-italic">new community</span>
+            </button>
+          </div>
+        </ScrollArea>
+      </div>
+
+      {/* Channels */}
+      <div className="w-56 bg-card border-r border-border flex flex-col shrink-0">
+        <div className="p-4 border-b border-border">
+          <p className="accent-italic text-xs text-primary">{currentCommunity?.name}</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">channel index</p>
+        </div>
+        <ScrollArea className="flex-1 p-2">
+          <div className="space-y-0.5">
+            {channels.map((ch) => (
+              <button
+                key={ch}
+                onClick={() => setActiveChannel(ch)}
+                className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
+                  activeChannel === ch
+                    ? "bg-accent text-accent-foreground font-medium"
+                    : "text-muted-foreground hover:bg-accent"
+                }`}
+              >
+                <Hash className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+                {ch}
               </button>
             ))}
           </div>
         </ScrollArea>
-        <div className="p-3 border-t border-border bg-card/50">
+        <div className="p-3 border-t border-border">
           <div className="flex items-center gap-2">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback className="bg-primary/20 text-primary text-xs">JD</AvatarFallback>
-            </Avatar>
+            <div className="w-7 h-7 rounded-full bg-accent border border-border flex items-center justify-center text-[11px] text-accent-foreground">JD</div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-foreground truncate">Jane Doe</p>
-              <p className="text-[10px] text-primary">Online</p>
+              <p className="text-xs text-foreground truncate">Jane Doe</p>
+              <p className="text-[10px] text-primary accent-italic">online</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main chat area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Chat header */}
-        <header className="h-12 border-b border-border flex items-center justify-between px-4 shrink-0">
+      {/* Main */}
+      <div className="flex-1 flex flex-col min-w-0 notebook-grid">
+        <header className="h-14 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-6 shrink-0">
           <div className="flex items-center gap-2">
-            <Hash className="h-5 w-5 text-muted-foreground" />
-            <span className="font-semibold text-foreground text-sm">{activeChannel}</span>
+            <Hash className="h-4 w-4 text-primary" strokeWidth={1.5} />
+            <span className="accent-italic text-foreground">{activeChannel}</span>
+            <span className="text-xs text-muted-foreground ml-2">— {currentCommunity?.name}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="relative hidden sm:block">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input placeholder="Search messages..." className="h-7 pl-8 text-xs w-44 bg-muted/50" />
+              <Input placeholder="Search notes…" className="h-8 pl-8 text-xs w-44 bg-card" />
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-accent">
               <Pin className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-              <Users className="h-4 w-4" />
             </Button>
           </div>
         </header>
 
-        {/* Messages */}
-        <ScrollArea className="flex-1 p-4">
-          <div className="space-y-4 max-w-3xl">
+        {/* Messages — notebook entries */}
+        <ScrollArea className="flex-1 px-8 py-6">
+          <div className="max-w-3xl mx-auto space-y-6">
             {mockMessages.map((msg) => (
-              <div key={msg.id} className={`group flex gap-3 ${msg.pinned ? "relative" : ""}`}>
+              <article key={msg.id} className="group">
                 {msg.pinned && (
-                  <div className="absolute -top-2 left-10 flex items-center gap-1 text-[10px] text-primary">
-                    <Pin className="h-2.5 w-2.5" /> Pinned
+                  <div className="flex items-center gap-1 text-[10px] text-primary mb-1 accent-italic">
+                    <Pin className="h-2.5 w-2.5" /> pinned note
                   </div>
                 )}
-                <Avatar className="h-9 w-9 shrink-0 mt-0.5">
-                  <AvatarFallback className="bg-muted text-xs text-foreground">{msg.avatar}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className={`text-sm font-semibold ${roleConfig[msg.role]?.color || "text-foreground"}`}>
-                      {msg.user}
-                    </span>
-                    <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-border">
-                      {msg.role}
-                    </Badge>
-                    <span className="text-[10px] text-muted-foreground">{msg.time}</span>
+                <header className="flex items-baseline gap-2 mb-1">
+                  <span className={`text-sm font-medium ${roleColor[msg.role]}`}>{msg.user}</span>
+                  <span className="text-[11px] text-muted-foreground accent-italic">— {msg.role}</span>
+                  <span className="text-[11px] text-muted-foreground ml-auto">{msg.time}</span>
+                </header>
+                <p className="text-sm text-foreground/85 leading-relaxed pl-3 border-l border-border">
+                  {msg.text}
+                </p>
+                {msg.code && (
+                  <pre className="mt-2 ml-3 text-xs font-mono text-foreground/80 bg-muted rounded border border-border p-3 overflow-x-auto">
+                    {msg.code}
+                  </pre>
+                )}
+                {msg.replies && msg.replies.length > 0 && (
+                  <div className="ml-8 mt-3 space-y-2 border-l border-dotted border-border pl-4">
+                    <p className="accent-italic text-[11px] text-muted-foreground">margin notes</p>
+                    {msg.replies.map((r, i) => (
+                      <div key={i}>
+                        <header className="flex items-baseline gap-2 mb-0.5">
+                          <span className="text-xs font-medium text-foreground">{r.user}</span>
+                          <span className="text-[10px] text-muted-foreground">{r.time}</span>
+                        </header>
+                        <p className="text-xs text-foreground/80 leading-relaxed">{r.text}</p>
+                      </div>
+                    ))}
                   </div>
-                  <p className="text-sm text-foreground/90 leading-relaxed">{msg.text}</p>
-                  {msg.hasCode && msg.code && (
-                    <pre className="mt-2 text-xs font-mono text-primary/80 bg-muted rounded-lg p-3 border border-border overflow-x-auto">
-                      {msg.code}
-                    </pre>
-                  )}
-                  {msg.reactions.length > 0 && (
-                    <div className="flex gap-1.5 mt-2">
-                      {msg.reactions.map((r, i) => (
-                        <button key={i} className="flex items-center gap-1 text-xs bg-muted hover:bg-muted/80 border border-border rounded-full px-2 py-0.5 transition-colors">
-                          <span>{r.emoji}</span>
-                          <span className="text-muted-foreground">{r.count}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {/* Hover actions */}
-                  <div className="hidden group-hover:flex items-center gap-1 mt-1">
-                    <button className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-                      <ThumbsUp className="h-3.5 w-3.5" />
-                    </button>
-                    <button className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-                      <Flame className="h-3.5 w-3.5" />
-                    </button>
-                    <button className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-                      <Lightbulb className="h-3.5 w-3.5" />
-                    </button>
-                    <button className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-                      <Reply className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+                )}
+                <div className="hidden group-hover:flex items-center gap-3 mt-2 ml-3 text-muted-foreground">
+                  <button className="flex items-center gap-1 text-[11px] hover:text-primary transition-colors">
+                    <ThumbsUp className="h-3 w-3" /> agree
+                  </button>
+                  <button className="flex items-center gap-1 text-[11px] hover:text-primary transition-colors">
+                    <Lightbulb className="h-3 w-3" /> insight
+                  </button>
+                  <button className="flex items-center gap-1 text-[11px] hover:text-primary transition-colors">
+                    <Reply className="h-3 w-3" /> reply
+                  </button>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         </ScrollArea>
 
-        {/* Message input */}
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center gap-2 bg-muted rounded-xl px-4 py-2 border border-border focus-within:border-primary/30 transition-colors">
-            <button className="text-muted-foreground hover:text-foreground transition-colors">
-              <Plus className="h-5 w-5" />
-            </button>
+        {/* Composer */}
+        <div className="p-4 border-t border-border bg-card">
+          <div className="max-w-3xl mx-auto flex items-center gap-2 border border-border rounded-md px-3 py-2 bg-background focus-within:border-primary transition-colors">
             <input
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder={`Message #${activeChannel}`}
+              placeholder={`Add a note to #${activeChannel}…`}
               className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
             />
-            <div className="flex items-center gap-1.5">
-              <button className="text-muted-foreground hover:text-foreground transition-colors">
-                <Code className="h-4 w-4" />
-              </button>
-              <button className="text-muted-foreground hover:text-foreground transition-colors">
-                <Paperclip className="h-4 w-4" />
-              </button>
-              <button className="text-muted-foreground hover:text-foreground transition-colors">
-                <Smile className="h-4 w-4" />
-              </button>
-              <Button size="icon" className="h-7 w-7 rounded-lg bg-primary text-primary-foreground">
-                <Send className="h-3.5 w-3.5" />
-              </Button>
-            </div>
+            <button className="text-muted-foreground hover:text-primary transition-colors">
+              <Code className="h-4 w-4" />
+            </button>
+            <button className="text-muted-foreground hover:text-primary transition-colors">
+              <Paperclip className="h-4 w-4" />
+            </button>
+            <Button size="icon" className="h-7 w-7 bg-primary text-primary-foreground hover:bg-primary/90">
+              <Send className="h-3.5 w-3.5" />
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Right panel - Members */}
-      <div className="w-60 border-l border-border bg-card/50 hidden lg:flex flex-col shrink-0">
-        <div className="p-4 border-b border-border">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Online — {onlineMembers.filter(m => m.status === "online").length}
-          </h3>
+      {/* Members */}
+      <div className="w-56 border-l border-border bg-sidebar hidden lg:flex flex-col shrink-0">
+        <div className="p-4 border-b border-sidebar-border">
+          <p className="accent-italic text-xs text-primary">Active members</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">{onlineMembers.filter(m => m.status === "online").length} online</p>
         </div>
         <ScrollArea className="flex-1 p-2">
           <div className="space-y-0.5">
-            {onlineMembers.map((member) => {
-              const config = roleConfig[member.role];
-              return (
-                <div key={member.name} className="flex items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-muted/50 cursor-pointer transition-colors">
-                  <div className="relative">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-muted text-[10px] text-foreground">
-                        {member.name.split(" ").map(n => n[0]).join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card ${
-                      member.status === "online" ? "bg-primary" : "bg-muted-foreground"
-                    }`} />
+            {onlineMembers.map((m) => (
+              <div key={m.name} className="flex items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer transition-colors">
+                <div className="relative">
+                  <div className="w-7 h-7 rounded-full bg-card border border-border flex items-center justify-center text-[10px] text-foreground">
+                    {m.name.split(" ").map(n => n[0]).join("")}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-xs font-medium truncate ${config?.color || "text-foreground"}`}>{member.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{member.role}</p>
-                  </div>
+                  <span className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border border-card ${m.status === "online" ? "bg-primary" : "bg-muted-foreground"}`} />
                 </div>
-              );
-            })}
+                <div className="flex-1 min-w-0">
+                  <p className={`text-xs truncate ${roleColor[m.role]}`}>{m.name}</p>
+                  <p className="text-[10px] text-muted-foreground accent-italic">{m.role.toLowerCase()}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </ScrollArea>
       </div>
