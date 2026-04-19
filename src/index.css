@@ -2,57 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-
 @layer base {
   :root {
-    --background: 220 20% 7%;
-    --foreground: 210 20% 92%;
+    /* Notebook aesthetic — sage + grayish brown on off-white */
+    --background: 40 20% 97%;            /* off-white paper */
+    --foreground: 30 10% 25%;            /* grayish brown text */
 
-    --card: 220 18% 10%;
-    --card-foreground: 210 20% 92%;
+    --card: 0 0% 100%;                   /* clean white card */
+    --card-foreground: 30 10% 25%;
 
-    --popover: 220 18% 10%;
-    --popover-foreground: 210 20% 92%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 30 10% 25%;
 
-    --primary: 152 80% 50%;
-    --primary-foreground: 220 20% 7%;
+    --primary: 165 35% 45%;              /* sage / turquoise */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 80% 55%;
-    --secondary-foreground: 210 20% 98%;
+    --secondary: 140 30% 85%;            /* light green */
+    --secondary-foreground: 30 10% 25%;
 
-    --muted: 220 15% 15%;
-    --muted-foreground: 215 15% 55%;
+    --muted: 40 15% 93%;                 /* warm light gray */
+    --muted-foreground: 30 8% 50%;       /* muted grayish brown */
 
-    --accent: 152 80% 50%;
-    --accent-foreground: 220 20% 7%;
+    --accent: 165 30% 92%;               /* very light sage tint */
+    --accent-foreground: 165 35% 30%;
 
-    --destructive: 0 72% 55%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 5 55% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 220 15% 18%;
-    --input: 220 15% 18%;
-    --ring: 152 80% 50%;
+    --border: 30 12% 82%;                /* grayish-brown border */
+    --input: 30 12% 82%;
+    --ring: 165 35% 45%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    --sidebar-background: 220 20% 5%;
-    --sidebar-foreground: 210 20% 80%;
-    --sidebar-primary: 152 80% 50%;
-    --sidebar-primary-foreground: 220 20% 7%;
-    --sidebar-accent: 220 15% 12%;
-    --sidebar-accent-foreground: 210 20% 92%;
-    --sidebar-border: 220 15% 15%;
-    --sidebar-ring: 152 80% 50%;
+    --sidebar-background: 40 18% 95%;
+    --sidebar-foreground: 30 10% 30%;
+    --sidebar-primary: 165 35% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 165 30% 92%;
+    --sidebar-accent-foreground: 165 35% 30%;
+    --sidebar-border: 30 12% 85%;
+    --sidebar-ring: 165 35% 45%;
 
-    /* Custom tokens */
-    --neon-green: 152 80% 50%;
-    --neon-blue: 210 80% 55%;
-    --neon-cyan: 185 80% 55%;
-    --surface: 220 18% 10%;
-    --surface-hover: 220 15% 14%;
-    --glow-green: 0 0% 0% / 0;
-    --glow-blue: 0 0% 0% / 0;
+    /* Custom notebook tokens */
+    --sage: 165 35% 45%;
+    --sage-light: 140 30% 85%;
+    --sage-tint: 165 30% 92%;
+    --ink: 30 10% 25%;
+    --ink-muted: 30 8% 50%;
+    --paper: 40 20% 97%;
+    --grid-line: 30 12% 88%;
+    --grid-line-strong: 30 15% 80%;
   }
 }
 
@@ -62,57 +62,83 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', sans-serif;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Calibri', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Scientific / equation accent font */
+  .font-accent,
+  .accent-italic {
+    font-family: 'Cambria Math', 'Cambria', 'STIX Two Math', Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: 0.01em;
   }
 
   code, .font-mono {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Consolas', 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  h1, h2, h3, h4 {
+    font-weight: 500;
+    letter-spacing: -0.005em;
   }
 }
 
 @layer utilities {
-  .glow-green {
-    box-shadow: 0 0 20px hsl(152 80% 50% / 0.15), 0 0 60px hsl(152 80% 50% / 0.05);
-  }
-
-  .glow-blue {
-    box-shadow: 0 0 20px hsl(210 80% 55% / 0.15), 0 0 60px hsl(210 80% 55% / 0.05);
-  }
-
-  .glow-text-green {
-    text-shadow: 0 0 20px hsl(152 80% 50% / 0.5);
-  }
-
-  .glow-text-blue {
-    text-shadow: 0 0 20px hsl(210 80% 55% / 0.5);
-  }
-
-  .ecg-grid {
+  /* Subtle notebook grid — global background */
+  .notebook-grid {
+    background-color: hsl(var(--paper));
     background-image:
-      linear-gradient(hsl(152 80% 50% / 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(152 80% 50% / 0.03) 1px, transparent 1px);
-    background-size: 20px 20px;
+      linear-gradient(hsl(var(--grid-line) / 0.55) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--grid-line) / 0.55) 1px, transparent 1px);
+    background-size: 28px 28px;
+    background-position: -1px -1px;
+  }
+
+  /* Stronger grid for circuit/lab workspaces */
+  .graph-paper {
+    background-color: hsl(var(--card));
+    background-image:
+      linear-gradient(hsl(var(--grid-line-strong) / 0.7) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--grid-line-strong) / 0.7) 1px, transparent 1px),
+      linear-gradient(hsl(var(--grid-line) / 0.5) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--grid-line) / 0.5) 1px, transparent 1px);
+    background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+    background-position: -1px -1px;
+  }
+
+  /* Lined paper (ruled notebook) */
+  .ruled-paper {
+    background-color: hsl(var(--card));
+    background-image: linear-gradient(hsl(var(--grid-line) / 0.6) 1px, transparent 1px);
+    background-size: 100% 28px;
+  }
+
+  /* Underlined input style (notebook field) */
+  .field-underline {
+    @apply bg-transparent border-0 border-b border-border rounded-none px-0
+           focus-visible:ring-0 focus-visible:border-primary transition-colors;
+  }
+
+  /* Soft card — flat, thin border */
+  .paper-card {
+    @apply bg-card border border-border rounded-md;
+  }
+
+  /* Hover tint */
+  .hover-tint {
+    @apply transition-colors hover:bg-accent;
   }
 }
 
-/* ECG waveform animation */
-@keyframes ecg-pulse {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 1; }
+/* Soft, calm animations only */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes ecg-draw {
-  from { stroke-dashoffset: 1000; }
-  to { stroke-dashoffset: 0; }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
-}
-
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 5px hsl(152 80% 50% / 0.2); }
-  50% { box-shadow: 0 0 25px hsl(152 80% 50% / 0.4), 0 0 50px hsl(152 80% 50% / 0.1); }
+@keyframes ink-pulse {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
 }
