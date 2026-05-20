@@ -70,6 +70,17 @@ export default {
           muted: "hsl(var(--ink-muted))",
         },
         paper: "hsl(var(--paper))",
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        trace: {
+          ecg: "hsl(var(--trace-ecg))",
+          resp: "hsl(var(--trace-resp))",
+          pleth: "hsl(var(--trace-pleth))",
+          co2: "hsl(var(--trace-co2))",
+          ibp: "hsl(var(--trace-ibp))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

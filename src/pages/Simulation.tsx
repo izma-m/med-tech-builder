@@ -1,25 +1,102 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Play, Pause, RotateCcw, AlertTriangle, Zap, Radio, Filter, Monitor, BookOpen, Code, Lightbulb, CircuitBoard, MessageSquare, Share2 } from "lucide-react";
+import {
+  ArrowLeft, Play, Pause, RotateCcw, MessageSquare, Share2, AlertTriangle, X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const systemBlocks = [
-  { name: "Sensor", icon: Radio, desc: "Electrode picks up cardiac electrical signals from the body surface." },
-  { name: "Amplifier", icon: Zap, desc: "Instrumentation amplifier boosts microvolt-level signals to a measurable range." },
-  { name: "Filter", icon: Filter, desc: "Bandpass filter (0.05–100 Hz) removes noise and baseline wander." },
-  { name: "Output", icon: Monitor, desc: "ADC converts analog signal to digital for display and analysis." },
+type Scenario = "normal" | "vtach" | "apnea" | "hypoxia";
+type Version = "intro" | "bme" | "pcb" | "service" | "user";
+
+const VERSIONS: { id: Version; label: string }[] = [
+  { id: "intro", label: "Introduction & Theory" },
+  { id: "bme", label: "BME / Technical" },
+  { id: "pcb", label: "Circuit / PCB" },
+  { id: "service", label: "Troubleshooting & Service" },
+  { id: "user", label: "User / Clinical" },
 ];
+
+const SCENARIOS: { id: Scenario; label: string }[] = [
+  { id: "normal", label: "Normal" },
+  { id: "vtach", label: "Arrhythmia (V-Tach)" },
+  { id: "apnea", label: "Apnea" },
+  { id: "hypoxia", label: "Hypoxia" },
+];
+
+type Hotspot = {
+  id: string;
+  label: string;
+  role: string;
+  params: string;
+  failures: string;
+};
+
+const HOTSPOTS: Record<string, Hotspot> = {
+  lcd: {
+    id: "lcd", label: "LCD Display",
+    role: "Renders waveforms and numeric vitals for the clinician.",
+    params: "Refresh ≥ 60 Hz · 800×480 px typical · backlight 300 cd/m²",
+    failures: "Dead pixels, backlight failure, ribbon-cable disconnect, flicker.",
+  },
+  pcb: {
+    id: "pcb", label: "Internal PCB",
+    role: "Hosts the analog front-end, microcontroller, and ADC.",
+    params: "12-bit ADC @ 500 Hz · gain ≈ 1000 · LP cutoff 100 Hz",
+    failures: "Solder joint cracking, blown isolation amp, EMI from power section.",
+  },
+  power: {
+    id: "power", label: "Power Module",
+    role: "Mains + battery management with medical-grade isolation.",
+    params: "Input 100–240 VAC · battery Li-ion 14.4 V · isolation 4 kV",
+    failures: "Battery degradation, fuse open, isolation breakdown.",
+  },
+  comm: {
+    id: "comm", label: "Communication Module",
+    role: "Streams vitals to central monitoring via Ethernet / Wi-Fi.",
+    params: "HL7 / IEEE 11073 · Wi-Fi 802.11 a/c · latency < 1 s",
+    failures: "Wi-Fi dropout, HL7 parsing errors, MAC conflicts.",
+  },
+  ports: {
+    id: "ports", label: "Sensor Ports",
+    role: "Connects ECG leads, SpO₂ probe, NIBP cuff, CO₂ line, IBP transducers.",
+    params: "ECG 5-lead · SpO₂ red/IR LEDs · NIBP 0–300 mmHg",
+    failures: "Lead-off detection, probe wear, cuff leak.",
+  },
+};
 
 const Simulation = () => {
   const navigate = useNavigate();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [heartRate, setHeartRate] = useState([72]);
-  const [noiseLevel, setNoiseLevel] = useState([10]);
   const [isPlaying, setIsPlaying] = useState(true);
-  const [mode, setMode] = useState<"normal" | "arrhythmia" | "fault">("normal");
-  const [activeBlock, setActiveBlock] = useState<number | null>(null);
+  const [version, setVersion] = useState<Version>("user");
+  const [scenario, setScenario] = useState<Scenario>("normal");
+  const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
+  const [serviceFault, setServiceFault] = useState<string | null>(null);
+
+  const [hr, setHr] = useState([72]);
+  const [rr, setRr] = useState([16]);
+  const [spo2, setSpo2] = useState([98]);
+  const [sbp, setSbp] = useState([120]);
+  const [noise, setNoise] = useState([6]);
+
+  // Auto-apply scenario side-effects
+  useEffect(() => {
+    if (scenario === "vtach") setHr([180]);
+    else if (scenario === "hypoxia") setSpo2([82]);
+    else if (scenario === "normal") {
+      // soft reset of forced values, leave user-set ones alone-ish
+    }
+  }, [scenario]);
+
+  // Display vitals (derive from scenario/sliders)
+  const dispHR = scenario === "vtach" ? 180 : hr[0];
+  const dispRR = scenario === "apnea" ? 0 : rr[0];
+  const dispSpO2 = scenario === "hypoxia" ? 82 : spo2[0];
+  const dispSBP = scenario === "vtach" ? Math.round(sbp[0] * 0.6) : sbp[0];
+  const dispDBP = Math.round(dispSBP * 0.65);
+  const dispCO2 = scenario === "apnea" ? 0 : 38;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -27,90 +104,159 @@ const Simulation = () => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let animationId: number;
-    let offset = 0;
-
-    const styles = getComputedStyle(document.documentElement);
-    const sage = styles.getPropertyValue("--sage").trim() || "165 35% 45%";
-    const grid = styles.getPropertyValue("--grid-line-strong").trim() || "30 15% 80%";
-    const gridFine = styles.getPropertyValue("--grid-line").trim() || "30 12% 88%";
+    let animId: number;
+    let t = 0;
+    let dpr = window.devicePixelRatio || 1;
 
     const resize = () => {
-      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      dpr = window.devicePixelRatio || 1;
+      canvas.width = canvas.offsetWidth * dpr;
+      canvas.height = canvas.offsetHeight * dpr;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
     };
     resize();
     window.addEventListener("resize", resize);
+
+    const styles = getComputedStyle(document.documentElement);
+    const colorOf = (v: string, alpha = 1) => {
+      const raw = styles.getPropertyValue(v).trim();
+      return `hsla(${raw} / ${alpha})`;
+    };
+
+    const traces = [
+      { key: "ECG", color: colorOf("--trace-ecg"), value: dispHR + " bpm" },
+      { key: "RESP", color: colorOf("--trace-resp"), value: dispRR + " /min" },
+      { key: "Pleth", color: colorOf("--trace-pleth"), value: dispSpO2 + "%" },
+      { key: "CO₂", color: colorOf("--trace-co2"), value: dispCO2 + " mmHg" },
+      { key: "IBP", color: colorOf("--trace-ibp"), value: `${dispSBP}/${dispDBP}` },
+    ];
+
+    // Pre-compute one cycle waveform per trace, scrolling
+    const ecgSample = (phase: number) => {
+      if (scenario === "vtach") {
+        // chaotic sawtooth+sine
+        return (
+          Math.sin(phase * 8) * 0.45 +
+          ((phase * 3) % 1 - 0.5) * 0.6 +
+          Math.sin(phase * 17) * 0.15
+        );
+      }
+      // Normal PQRST as gaussians, phase in [0, 1) per beat
+      const g = (c: number, w: number, a: number) =>
+        a * Math.exp(-((phase - c) ** 2) / (2 * w * w));
+      return g(0.18, 0.025, 0.18) + g(0.30, 0.008, -0.18) + g(0.32, 0.006, 1.0) +
+             g(0.34, 0.008, -0.25) + g(0.55, 0.04, 0.28);
+    };
+
+    const respSample = (phase: number) => {
+      if (scenario === "apnea") return 0;
+      return Math.sin(phase * Math.PI * 2) * 0.6;
+    };
+    const plethSample = (phase: number) => {
+      const amp = scenario === "hypoxia" ? 0.4 : 1.0;
+      const base = Math.max(0, Math.sin(phase * Math.PI * 2));
+      return (base ** 1.6) * amp - amp * 0.3;
+    };
+    const co2Sample = (phase: number) => {
+      if (scenario === "apnea") return 0;
+      // trapezoid
+      const p = phase;
+      if (p < 0.1) return p * 10 * 0.6;
+      if (p < 0.7) return 0.6;
+      if (p < 0.85) return (0.85 - p) * (0.6 / 0.15);
+      return 0;
+    };
+    const ibpSample = (phase: number) => {
+      const peak = scenario === "vtach" ? 0.5 : 0.9;
+      const a = peak * Math.max(0, Math.sin(phase * Math.PI * 2)) ** 2;
+      const dic = 0.35 * Math.max(0, Math.sin((phase - 0.45) * Math.PI * 2)) ** 4;
+      return a + dic - peak * 0.3;
+    };
 
     const draw = () => {
       const w = canvas.offsetWidth;
       const h = canvas.offsetHeight;
       ctx.clearRect(0, 0, w, h);
 
-      // Fine grid
-      ctx.strokeStyle = `hsla(${gridFine} / 0.6)`;
+      // Notebook-style background grid
+      ctx.strokeStyle = colorOf("--grid-line", 0.5);
       ctx.lineWidth = 0.5;
       for (let x = 0; x < w; x += 20) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
       for (let y = 0; y < h; y += 20) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
-      // Major grid
-      ctx.strokeStyle = `hsla(${grid} / 0.7)`;
-      for (let x = 0; x < w; x += 100) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
-      for (let y = 0; y < h; y += 100) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
 
-      if (!isPlaying) { animationId = requestAnimationFrame(draw); return; }
+      const rowH = h / traces.length;
+      const labelW = 64;
+      const plotX = labelW;
+      const plotW = w - labelW - 96; // leave space for vitals digits
 
-      const speed = heartRate[0] / 72;
-      ctx.beginPath();
-      ctx.strokeStyle = `hsl(${sage})`;
-      ctx.lineWidth = 1.75;
+      // Rates per trace (cycles per pixel)
+      const ecgBeatsPerSec = (scenario === "vtach" ? 180 : dispHR) / 60;
+      const respBpsPerSec = dispRR / 60;
+      const pxPerSec = 80; // scroll speed
 
-      const mid = h / 2;
-      for (let x = 0; x < w; x++) {
-        const t = (x + offset * speed) * 0.015;
-        const cycle = t % (Math.PI * 2);
-        let val = 0;
+      traces.forEach((tr, i) => {
+        const baseY = rowH * i + rowH / 2;
+        // separator
+        ctx.strokeStyle = colorOf("--border", 0.8);
+        ctx.lineWidth = 0.6;
+        ctx.beginPath();
+        ctx.moveTo(0, rowH * (i + 1));
+        ctx.lineTo(w, rowH * (i + 1));
+        ctx.stroke();
 
-        if (mode === "arrhythmia") {
-          const irregular = Math.sin(t * 0.3) * 0.3;
-          if (cycle < 0.5) val = Math.sin(cycle * Math.PI * 4) * (0.3 + irregular);
-          else if (cycle < 1.5) val = 0;
-          else if (cycle < 2.0) val = Math.sin((cycle - 1.5) * Math.PI * 2) * (1.0 + irregular * 0.5);
-          else if (cycle < 2.3) val = -Math.sin((cycle - 2.0) * Math.PI * 3.3) * 0.3;
-          else val = Math.sin(cycle * 0.5) * 0.05;
-        } else if (mode === "fault") {
-          if (Math.random() < 0.02) val = (Math.random() - 0.5) * 2;
-          else if (cycle < 2.0) val = Math.sin((cycle - 1.5) * Math.PI * 2) * 0.5;
-          else val = 0;
-        } else {
-          if (cycle < 0.5) val = Math.sin(cycle * Math.PI * 4) * 0.3;
-          else if (cycle < 1.2) val = 0;
-          else if (cycle < 1.5) val = -Math.sin((cycle - 1.2) * Math.PI * 3.3) * 0.2;
-          else if (cycle < 2.0) val = Math.sin((cycle - 1.5) * Math.PI * 2) * 1.0;
-          else if (cycle < 2.3) val = -Math.sin((cycle - 2.0) * Math.PI * 3.3) * 0.3;
-          else if (cycle < 3.5) val = 0;
-          else if (cycle < 4.5) val = Math.sin((cycle - 3.5) * Math.PI) * 0.2;
-          else val = 0;
+        // label
+        ctx.fillStyle = tr.color;
+        ctx.font = "italic 11px 'Cambria Math', Cambria, serif";
+        ctx.fillText(tr.key, 8, baseY - 8);
+        ctx.fillStyle = colorOf("--ink-muted", 1);
+        ctx.font = "10px Consolas, monospace";
+        ctx.fillText(tr.value, 8, baseY + 8);
+
+        // Big numeric on the right
+        ctx.fillStyle = tr.color;
+        ctx.font = "bold 18px Consolas, monospace";
+        const big = tr.value.split(" ")[0];
+        ctx.fillText(big, w - 88, baseY + 6);
+
+        // Waveform
+        ctx.strokeStyle = tr.color;
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        for (let px = 0; px <= plotW; px++) {
+          const tt = t / 60 - (plotW - px) / pxPerSec; // seconds at this px
+          let v = 0;
+          if (i === 0) v = ecgSample(((tt * ecgBeatsPerSec) % 1 + 1) % 1);
+          else if (i === 1) v = respSample(((tt * respBpsPerSec) % 1 + 1) % 1);
+          else if (i === 2) v = plethSample(((tt * ecgBeatsPerSec) % 1 + 1) % 1);
+          else if (i === 3) v = co2Sample(((tt * respBpsPerSec) % 1 + 1) % 1);
+          else v = ibpSample(((tt * ecgBeatsPerSec) % 1 + 1) % 1);
+
+          v += (Math.random() - 0.5) * noise[0] * 0.003;
+
+          const py = baseY - v * (rowH * 0.35);
+          if (px === 0) ctx.moveTo(plotX + px, py);
+          else ctx.lineTo(plotX + px, py);
         }
+        ctx.stroke();
 
-        val += (Math.random() - 0.5) * noiseLevel[0] * 0.005;
+        // sweep cursor
+        ctx.fillStyle = colorOf("--ink-muted", 0.4);
+        ctx.fillRect(plotX + plotW - 1, rowH * i + 4, 1, rowH - 8);
+      });
 
-        const py = mid - val * (h * 0.3);
-        if (x === 0) ctx.moveTo(x, py);
-        else ctx.lineTo(x, py);
-      }
-      ctx.stroke();
-
-      offset += 2;
-      animationId = requestAnimationFrame(draw);
+      if (isPlaying) t += 1;
+      animId = requestAnimationFrame(draw);
     };
     draw();
 
     return () => {
-      cancelAnimationFrame(animationId);
+      cancelAnimationFrame(animId);
       window.removeEventListener("resize", resize);
     };
-  }, [heartRate, noiseLevel, isPlaying, mode]);
+  }, [isPlaying, scenario, hr, rr, spo2, sbp, noise, dispHR, dispRR, dispSpO2, dispSBP, dispDBP, dispCO2]);
+
+  const apneaAlarm = scenario === "apnea";
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -122,11 +268,11 @@ const Simulation = () => {
           </Button>
           <div>
             <p className="accent-italic text-[11px] text-muted-foreground leading-none">Experiment 01</p>
-            <h1 className="text-sm text-foreground font-medium leading-tight mt-0.5">ECG Signal Acquisition</h1>
+            <h1 className="text-sm text-foreground font-medium leading-tight mt-0.5">Patient Monitor Simulation</h1>
           </div>
-          {mode === "fault" && (
-            <span className="flex items-center gap-1 text-xs text-destructive bg-destructive/10 px-2 py-0.5 rounded">
-              <AlertTriangle className="h-3 w-3" /> Fault Mode
+          {apneaAlarm && (
+            <span className="flex items-center gap-1 text-xs text-warning bg-warning/10 border border-warning/40 px-2 py-0.5 rounded animate-pulse">
+              <AlertTriangle className="h-3 w-3" /> Apnea alarm
             </span>
           )}
         </div>
@@ -140,50 +286,55 @@ const Simulation = () => {
           <Button variant="ghost" size="icon" onClick={() => setIsPlaying(!isPlaying)} className="text-muted-foreground hover:bg-accent">
             {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </Button>
-          <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-accent" onClick={() => { setMode("normal"); setHeartRate([72]); setNoiseLevel([10]); }}>
+          <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-accent"
+            onClick={() => { setScenario("normal"); setHr([72]); setRr([16]); setSpo2([98]); setSbp([120]); setNoise([6]); }}>
             <RotateCcw className="h-4 w-4" />
           </Button>
         </div>
       </header>
 
-      {/* Main */}
+      {/* Version tabs */}
+      <div className="border-b border-border bg-card/60 px-4 py-2 shrink-0">
+        <Tabs value={version} onValueChange={(v) => setVersion(v as Version)}>
+          <TabsList className="bg-muted border border-border h-9 flex-wrap">
+            {VERSIONS.map((v) => (
+              <TabsTrigger key={v.id} value={v.id} className="text-xs data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
+                {v.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      </div>
+
+      {/* Body */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 notebook-grid">
-        {/* Left - Parameters (notebook style) */}
-        <aside className="w-full lg:w-64 border-b lg:border-b-0 lg:border-r border-border bg-card/60 p-6 space-y-6 shrink-0 overflow-y-auto">
+        {/* Left - Controls */}
+        <aside className="w-full lg:w-72 border-b lg:border-b-0 lg:border-r border-border bg-card/60 p-5 space-y-5 shrink-0 overflow-y-auto">
           <div>
             <p className="accent-italic text-xs text-primary mb-3">§ Parameters</p>
-            <div className="space-y-5">
-              <div>
-                <div className="flex justify-between text-sm mb-2 items-baseline">
-                  <span className="text-foreground">Heart Rate</span>
-                  <span className="font-mono text-primary text-xs">{heartRate[0]} bpm</span>
-                </div>
-                <Slider value={heartRate} onValueChange={setHeartRate} min={40} max={180} step={1} />
-                <div className="border-b border-dotted border-border mt-3" />
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-2 items-baseline">
-                  <span className="text-foreground">Noise Level</span>
-                  <span className="font-mono text-primary text-xs">{noiseLevel[0]}%</span>
-                </div>
-                <Slider value={noiseLevel} onValueChange={setNoiseLevel} min={0} max={100} step={1} />
-                <div className="border-b border-dotted border-border mt-3" />
-              </div>
+            <div className="space-y-4">
+              <SliderRow label="Heart Rate" value={hr[0]} unit="bpm" set={setHr} v={hr} min={40} max={220} />
+              <SliderRow label="Resp Rate" value={rr[0]} unit="/min" set={setRr} v={rr} min={4} max={40} />
+              <SliderRow label="SpO₂" value={spo2[0]} unit="%" set={setSpo2} v={spo2} min={70} max={100} />
+              <SliderRow label="BP Systolic" value={sbp[0]} unit="mmHg" set={setSbp} v={sbp} min={60} max={200} />
+              <SliderRow label="Noise" value={noise[0]} unit="%" set={setNoise} v={noise} min={0} max={50} />
             </div>
           </div>
 
           <div>
-            <p className="accent-italic text-xs text-primary mb-3">§ Mode</p>
-            <div className="space-y-1">
-              {(["normal", "arrhythmia", "fault"] as const).map((m) => (
+            <p className="accent-italic text-xs text-primary mb-3">§ Scenarios</p>
+            <div className="grid grid-cols-2 gap-2">
+              {SCENARIOS.map((s) => (
                 <button
-                  key={m}
-                  onClick={() => setMode(m)}
-                  className={`w-full text-left text-sm px-3 py-2 rounded-md transition-colors capitalize ${
-                    mode === m ? "bg-accent text-accent-foreground font-medium" : "text-muted-foreground hover:bg-accent"
+                  key={s.id}
+                  onClick={() => setScenario(s.id)}
+                  className={`text-xs px-2.5 py-2 rounded-md border transition-colors text-left leading-tight ${
+                    scenario === s.id
+                      ? "border-primary bg-accent text-accent-foreground font-medium"
+                      : "border-border bg-card text-muted-foreground hover:bg-accent"
                   }`}
                 >
-                  {m === "fault" ? "Fault mode" : m}
+                  {s.label}
                 </button>
               ))}
             </div>
@@ -191,105 +342,247 @@ const Simulation = () => {
 
           <div>
             <p className="accent-italic text-xs text-primary mb-2">§ Notes</p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Adjust heart rate to observe how the QRS complex changes morphology under different physiological conditions.
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Adjust parameters and select a clinical scenario to observe how each physiological trace responds in real time.
             </p>
           </div>
         </aside>
 
-        {/* Center - Plot */}
+        {/* Center - Monitor canvas */}
         <div className="flex-1 flex flex-col min-w-0">
-          <div className="flex-1 relative p-6">
-            <div className="absolute top-8 left-8 z-10">
-              <p className="accent-italic text-xs text-primary">Fig. 1 — Lead II tracing</p>
+          <div className="flex-1 relative p-5">
+            <div className="absolute top-7 left-7 z-10">
+              <p className="accent-italic text-xs text-primary">Fig. 1 — Patient Monitor</p>
             </div>
-            <canvas ref={canvasRef} className="w-full h-full rounded border border-border bg-card" />
-            <div className="absolute bottom-8 right-8 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-primary rounded-full animate-ink-pulse" />
-              <span className="text-[11px] font-mono text-primary">{heartRate[0]} BPM</span>
+            <div
+              className={`w-full h-full rounded border bg-card overflow-hidden transition-colors ${
+                apneaAlarm ? "border-warning ring-2 ring-warning/40 animate-pulse" : "border-border"
+              }`}
+            >
+              <canvas ref={canvasRef} className="w-full h-full block" />
             </div>
           </div>
 
-          <div className="border-t border-border bg-card p-4 shrink-0">
-            <Tabs defaultValue="concept">
-              <TabsList className="bg-muted border border-border">
-                <TabsTrigger value="concept" className="text-xs data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
-                  <BookOpen className="h-3 w-3 mr-1" /> Concept
-                </TabsTrigger>
-                <TabsTrigger value="circuit" className="text-xs data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
-                  <CircuitBoard className="h-3 w-3 mr-1" /> Circuit
-                </TabsTrigger>
-                <TabsTrigger value="code" className="text-xs data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
-                  <Code className="h-3 w-3 mr-1" /> Code
-                </TabsTrigger>
-                <TabsTrigger value="reallife" className="text-xs data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
-                  <Lightbulb className="h-3 w-3 mr-1" /> Real-Life
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="concept" className="mt-3">
-                <p className="text-sm text-foreground/80 leading-relaxed max-w-3xl">
-                  An ECG measures the electrical activity of the heart using surface electrodes. The <span className="accent-italic text-primary">PQRST</span> complex represents atrial depolarization (P), ventricular depolarization (QRS), and ventricular repolarization (T).
-                </p>
-              </TabsContent>
-              <TabsContent value="circuit" className="mt-3">
-                <p className="text-sm text-foreground/80 leading-relaxed max-w-3xl">
-                  Uses an instrumentation amplifier (INA128) with gain ≈ 1000, followed by a bandpass filter (0.05–100 Hz) using active Butterworth topology, and a 50/60 Hz notch filter for powerline interference.
-                </p>
-              </TabsContent>
-              <TabsContent value="code" className="mt-3">
-                <pre className="text-xs font-mono text-foreground/80 bg-muted rounded border border-border p-3 overflow-x-auto">{`// Arduino ECG Reader
-int ecgPin = A0;
-void setup() { Serial.begin(9600); }
-void loop() {
-  int val = analogRead(ecgPin);
-  Serial.println(val);
-  delay(10); // ~100 Hz sampling
-}`}</pre>
-              </TabsContent>
-              <TabsContent value="reallife" className="mt-3">
-                <p className="text-sm text-foreground/80 leading-relaxed max-w-3xl">
-                  Hospital 12-lead ECG machines use 10 electrodes to generate 12 different views of the heart's electrical activity, often with automated arrhythmia detection and wireless transmission to central monitoring stations.
-                </p>
-              </TabsContent>
-            </Tabs>
+          {/* Version-specific bottom panel */}
+          <div className="border-t border-border bg-card p-4 shrink-0 max-h-56 overflow-y-auto">
+            {version === "intro" && (
+              <VersionPanel title="Introduction & Theory">
+                A patient monitor continuously measures vital signs through dedicated sensors, conditions
+                their signals, and displays them as waveforms and numeric values. Each trace is generated by a
+                separate front-end: <em>ECG</em> via skin electrodes and instrumentation amplifier, <em>SpO₂</em> via
+                red/IR LEDs and photodiode, <em>CO₂</em> via infrared absorption, <em>NIBP</em> via oscillometric cuff.
+              </VersionPanel>
+            )}
+            {version === "bme" && (
+              <VersionPanel title="BME / Technical Architecture">
+                Front-end modules feed an isolated analog stage (gain ≈ 1000, bandpass 0.05–100 Hz, 50/60 Hz notch),
+                a 12-bit ADC sampling at 500 Hz per channel, then a real-time DSP layer running on an ARM Cortex
+                microcontroller. A separate communication MCU handles HL7 streaming over Ethernet/Wi-Fi to central
+                monitoring. Power section is medical-grade isolated at 4 kV.
+              </VersionPanel>
+            )}
+            {version === "pcb" && (
+              <VersionPanel title="Circuit / PCB Layout">
+                PCB top side hosts the analog front-end (left), microcontroller (center), and power management
+                (right). Sensitive traces are shielded by guard rings; the isolation barrier separates patient-applied
+                parts from mains-referenced circuitry. Copper pours on the bottom side provide a low-impedance
+                ground plane for the ADC reference.
+              </VersionPanel>
+            )}
+            {version === "service" && (
+              <ServicePanel
+                fault={serviceFault}
+                setFault={setServiceFault}
+              />
+            )}
+            {version === "user" && (
+              <VersionPanel title="Clinical Operator">
+                Trend the patient&apos;s vitals continuously. Confirm alarm limits at the start of every shift. If a
+                waveform flatlines or numerics drop, first inspect the sensor and cable, then escalate per the unit
+                protocol.
+              </VersionPanel>
+            )}
           </div>
         </div>
 
-        {/* Right - System diagram */}
-        <aside className="w-full lg:w-60 border-t lg:border-t-0 lg:border-l border-border bg-card/60 p-6 shrink-0 overflow-y-auto">
-          <p className="accent-italic text-xs text-primary mb-4">§ Signal Path</p>
-          <div className="space-y-0">
-            {systemBlocks.map((block, i) => (
-              <div key={block.name}>
-                <button
-                  onClick={() => setActiveBlock(activeBlock === i ? null : i)}
-                  className={`w-full text-left rounded border p-3 transition-colors ${
-                    activeBlock === i ? "border-primary bg-accent" : "border-border bg-card hover-tint"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <block.icon className={`h-4 w-4 ${activeBlock === i ? "text-primary" : "text-muted-foreground"}`} strokeWidth={1.5} />
-                    <span className="text-sm text-foreground">{block.name}</span>
-                  </div>
-                  {activeBlock === i && (
-                    <p className="text-xs text-muted-foreground mt-2 leading-relaxed animate-fade-in">{block.desc}</p>
-                  )}
-                </button>
-                {i < systemBlocks.length - 1 && (
-                  <div className="flex justify-center py-1">
-                    <div className="w-px h-4 bg-border" />
-                  </div>
-                )}
+        {/* Right - Hardware assembly with hotspots */}
+        <aside className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-border bg-card/60 p-5 shrink-0 overflow-y-auto relative">
+          <p className="accent-italic text-xs text-primary mb-3">§ Hardware Assembly</p>
+          <p className="text-[11px] text-muted-foreground mb-3">
+            Click a region to inspect its role and common failure modes.
+          </p>
+
+          <div className="relative">
+            <svg viewBox="0 0 240 320" className="w-full h-auto">
+              {/* enclosure */}
+              <rect x="10" y="10" width="220" height="220" rx="8"
+                fill="hsl(var(--card))" stroke="hsl(var(--border))" strokeWidth="1.5" />
+
+              {/* LCD */}
+              <g className="cursor-pointer" onClick={() => setActiveHotspot("lcd")}>
+                <rect x="22" y="22" width="196" height="120" rx="3"
+                  fill="hsl(var(--accent))"
+                  stroke={activeHotspot === "lcd" ? "hsl(var(--primary))" : "hsl(var(--border))"}
+                  strokeWidth="1.5" />
+                <text x="120" y="86" textAnchor="middle" fontSize="9" fontStyle="italic"
+                  fill="hsl(var(--ink-muted))">LCD Display</text>
+              </g>
+
+              {/* PCB */}
+              <g className="cursor-pointer" onClick={() => setActiveHotspot("pcb")}>
+                <rect x="22" y="152" width="120" height="68" rx="2"
+                  fill="hsl(var(--secondary))"
+                  stroke={activeHotspot === "pcb" ? "hsl(var(--primary))" : "hsl(var(--border))"}
+                  strokeWidth="1.5" />
+                <text x="82" y="190" textAnchor="middle" fontSize="9" fontStyle="italic"
+                  fill="hsl(var(--ink))">PCB</text>
+                {/* mock traces */}
+                <path d="M30 165 H80 V200 H120" stroke="hsl(var(--primary))" strokeWidth="0.7" fill="none" />
+                <path d="M30 180 H100" stroke="hsl(var(--primary))" strokeWidth="0.7" fill="none" />
+              </g>
+
+              {/* Power */}
+              <g className="cursor-pointer" onClick={() => setActiveHotspot("power")}>
+                <rect x="152" y="152" width="66" height="32" rx="2"
+                  fill="hsl(var(--muted))"
+                  stroke={activeHotspot === "power" ? "hsl(var(--primary))" : "hsl(var(--border))"}
+                  strokeWidth="1.5" />
+                <text x="185" y="172" textAnchor="middle" fontSize="8" fontStyle="italic"
+                  fill="hsl(var(--ink-muted))">Power</text>
+              </g>
+
+              {/* Comm */}
+              <g className="cursor-pointer" onClick={() => setActiveHotspot("comm")}>
+                <rect x="152" y="188" width="66" height="32" rx="2"
+                  fill="hsl(var(--muted))"
+                  stroke={activeHotspot === "comm" ? "hsl(var(--primary))" : "hsl(var(--border))"}
+                  strokeWidth="1.5" />
+                <text x="185" y="208" textAnchor="middle" fontSize="8" fontStyle="italic"
+                  fill="hsl(var(--ink-muted))">Comm</text>
+              </g>
+
+              {/* Ports */}
+              <g className="cursor-pointer" onClick={() => setActiveHotspot("ports")}>
+                <rect x="22" y="244" width="196" height="56" rx="3"
+                  fill="hsl(var(--card))"
+                  stroke={activeHotspot === "ports" ? "hsl(var(--primary))" : "hsl(var(--border))"}
+                  strokeWidth="1.5" />
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <circle key={i} cx={48 + i * 36} cy={272} r={8}
+                    fill="hsl(var(--background))" stroke="hsl(var(--border))" strokeWidth="1.2" />
+                ))}
+                <text x="120" y="294" textAnchor="middle" fontSize="8" fontStyle="italic"
+                  fill="hsl(var(--ink-muted))">Sensor Ports</text>
+              </g>
+            </svg>
+
+            {activeHotspot && (
+              <div className="absolute left-2 right-2 top-2 paper-card p-3 shadow-sm animate-fade-in z-10 bg-card">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <p className="accent-italic text-sm text-primary">{HOTSPOTS[activeHotspot].label}</p>
+                  <button
+                    onClick={() => setActiveHotspot(null)}
+                    className="text-muted-foreground hover:text-foreground"
+                    aria-label="Close"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <p className="text-[11px] text-foreground/80 leading-relaxed mb-2">
+                  <span className="accent-italic text-muted-foreground">role · </span>
+                  {HOTSPOTS[activeHotspot].role}
+                </p>
+                <p className="text-[11px] text-foreground/80 leading-relaxed mb-2">
+                  <span className="accent-italic text-muted-foreground">params · </span>
+                  {HOTSPOTS[activeHotspot].params}
+                </p>
+                <p className="text-[11px] text-foreground/80 leading-relaxed">
+                  <span className="accent-italic text-muted-foreground">failures · </span>
+                  {HOTSPOTS[activeHotspot].failures}
+                </p>
               </div>
-            ))}
+            )}
           </div>
-          <div className="mt-6 pt-4 border-t border-border">
-            <p className="accent-italic text-[11px] text-muted-foreground tracking-wider text-center">
-              input → process → output
-            </p>
-          </div>
+
+          <p className="accent-italic text-[11px] text-muted-foreground tracking-wider text-center mt-4">
+            sensor → amp → filter → ADC → display
+          </p>
         </aside>
       </div>
+    </div>
+  );
+};
+
+const SliderRow = ({
+  label, value, unit, set, v, min, max,
+}: {
+  label: string; value: number; unit: string;
+  set: (v: number[]) => void; v: number[]; min: number; max: number;
+}) => (
+  <div>
+    <div className="flex justify-between text-sm mb-1.5 items-baseline">
+      <span className="text-foreground">{label}</span>
+      <span className="font-mono text-primary text-xs">{value} {unit}</span>
+    </div>
+    <Slider value={v} onValueChange={set} min={min} max={max} step={1} />
+  </div>
+);
+
+const VersionPanel = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div>
+    <p className="accent-italic text-xs text-primary mb-2">§ {title}</p>
+    <p className="text-sm text-foreground/80 leading-relaxed max-w-3xl">{children}</p>
+  </div>
+);
+
+const SERVICE_FAULTS = [
+  { id: "leadoff", label: "Sensor lead-off", fix: ["Inspect lead clips", "Re-prep skin with gel", "Replace electrode pads"] },
+  { id: "ampsat", label: "Amplifier saturation", fix: ["Check DC offset", "Verify input bias resistors", "Re-trim instrumentation amp gain"] },
+  { id: "ringing", label: "Filter ringing", fix: ["Confirm cutoff frequencies", "Inspect capacitor tolerance", "Damp feedback network"] },
+  { id: "flicker", label: "Display flicker", fix: ["Reseat LCD ribbon", "Inspect backlight inverter", "Check 3.3 V rail ripple"] },
+];
+
+const ServicePanel = ({
+  fault, setFault,
+}: {
+  fault: string | null; setFault: (s: string | null) => void;
+}) => {
+  const active = SERVICE_FAULTS.find((f) => f.id === fault);
+  return (
+    <div>
+      <p className="accent-italic text-xs text-primary mb-2">§ Troubleshooting Sandbox</p>
+      <div className="flex flex-wrap gap-2 mb-3">
+        {SERVICE_FAULTS.map((f) => (
+          <button
+            key={f.id}
+            onClick={() => setFault(f.id)}
+            className={`text-xs px-2.5 py-1 rounded-md border transition-colors ${
+              fault === f.id
+                ? "border-warning bg-warning/10 text-warning"
+                : "border-border bg-card text-muted-foreground hover:bg-accent"
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+        {fault && (
+          <button
+            onClick={() => setFault(null)}
+            className="text-xs px-2.5 py-1 rounded-md border border-border text-muted-foreground hover:bg-accent ml-auto"
+          >
+            Resolve
+          </button>
+        )}
+      </div>
+      {active ? (
+        <ol className="text-[12px] text-foreground/85 leading-relaxed list-decimal pl-5 space-y-1">
+          {active.fix.map((s, i) => <li key={i}>{s}</li>)}
+        </ol>
+      ) : (
+        <p className="text-[12px] text-muted-foreground">
+          Select a fault to inject — the affected stage will surface its diagnostic procedure here.
+        </p>
+      )}
     </div>
   );
 };

@@ -53,6 +53,15 @@
     --paper: 40 20% 97%;
     --grid-line: 30 12% 88%;
     --grid-line-strong: 30 15% 80%;
+
+    /* Semantic alarm + trace colors */
+    --warning: 12 70% 55%;
+    --warning-foreground: 0 0% 100%;
+    --trace-ecg: 150 50% 40%;
+    --trace-resp: 45 70% 50%;
+    --trace-pleth: 185 55% 50%;
+    --trace-co2: 280 35% 55%;
+    --trace-ibp: 5 65% 55%;
   }
 }
 
