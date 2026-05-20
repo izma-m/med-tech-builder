@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Hash, Search, Send, Paperclip, Code, Pin, Plus, ArrowLeft,
@@ -18,11 +18,25 @@ const communities = [
 
 const channels = ["general", "questions", "projects", "resources", "announcements"];
 
-const mockMessages = [
+type Message = {
+  id: number;
+  user: string;
+  role: "Mentor" | "Admin" | "Student";
+  time: string;
+  text: string;
+  pinned?: boolean;
+  code?: string;
+  replies?: { user: string; time: string; text: string }[];
+};
+
+const fmtTime = (d = new Date()) =>
+  d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+const seedGeneral: Message[] = [
   {
-    id: 1, user: "Dr. Sarah Chen", role: "Mentor",
+    id: 1, user: "Dr. Sarah Jansen", role: "Mentor",
     time: "2:34 PM", pinned: true,
-    text: "Welcome to ECG & Signals. Feel free to post questions about signal processing, circuit design, or any simulation work.",
+    text: "Welcome to the community. Post questions about signal processing, circuit design, or any simulation work.",
   },
   {
     id: 2, user: "Ahmed Khan", role: "Student",
@@ -33,12 +47,20 @@ const mockMessages = [
     id: 3, user: "Prof. Williams", role: "Admin",
     time: "3:45 PM",
     text: "Good observation, Ahmed. Try adjusting the heart rate slider to see how QRS morphology changes across rates.",
-    replies: [
-      { user: "Ahmed Khan", time: "3:48 PM", text: "Will do — thanks. I'll log my findings in #projects." },
-    ],
   },
+];
+
+const seedQuestions: Message[] = [
   {
-    id: 4, user: "Maria Lopez", role: "Student",
+    id: 10, user: "James Patel", role: "Student",
+    time: "4:30 PM",
+    text: "Can someone explain the difference between INA128 and AD620 instrumentation amplifiers for ECG applications?",
+  },
+];
+
+const seedProjects: Message[] = [
+  {
+    id: 20, user: "Maria Lopez", role: "Student",
     time: "4:02 PM",
     text: "Sharing my bandpass filter circuit for anyone working on the ECG lab assignment.",
     code: `// Bandpass Filter: 0.05 – 100 Hz
@@ -46,15 +68,26 @@ const fc_low  = 0.05;
 const fc_high = 100;
 const order   = 2; // Butterworth`,
   },
-  {
-    id: 5, user: "James Patel", role: "Student",
-    time: "4:30 PM",
-    text: "Can someone explain the difference between INA128 and AD620 instrumentation amplifiers for ECG applications?",
-  },
+];
+
+const initialMessages: Record<string, Message[]> = {
+  general: seedGeneral,
+  questions: seedQuestions,
+  projects: seedProjects,
+  resources: [],
+  announcements: [],
+};
+
+const mentorReplies = [
+  "Great point — try logging the value over a full cycle to confirm.",
+  "Nice. Have you checked the datasheet for the recommended gain configuration?",
+  "Good question. Look at the bandpass response between 0.05 Hz and 100 Hz.",
+  "Solid observation. Cross-reference it with the textbook chapter on biopotential amplifiers.",
+  "Run it once more under fault mode and compare the trace.",
 ];
 
 const onlineMembers = [
-  { name: "Dr. Sarah Chen", role: "Mentor", status: "online" },
+  { name: "Dr. Sarah Jansen", role: "Mentor", status: "online" },
   { name: "Prof. Williams", role: "Admin", status: "online" },
   { name: "Ahmed Khan", role: "Student", status: "online" },
   { name: "Maria Lopez", role: "Student", status: "online" },
@@ -73,8 +106,54 @@ const Community = () => {
   const [activeCommunity, setActiveCommunity] = useState("ecg");
   const [activeChannel, setActiveChannel] = useState("general");
   const [message, setMessage] = useState("");
+  const [messagesByChannel, setMessagesByChannel] = useState<Record<string, Message[]>>(initialMessages);
+  const [coLearning, setCoLearning] = useState(false);
+  const feedEndRef = useRef<HTMLDivElement>(null);
+  const replyTimer = useRef<number | null>(null);
 
   const currentCommunity = communities.find(c => c.id === activeCommunity);
+  const feed = messagesByChannel[activeChannel] ?? [];
+
+  useEffect(() => {
+    feedEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [feed.length, activeChannel]);
+
+  useEffect(() => () => {
+    if (replyTimer.current) window.clearTimeout(replyTimer.current);
+  }, []);
+
+  const send = () => {
+    const text = message.trim();
+    if (!text) return;
+    const channel = activeChannel;
+    const userMsg: Message = {
+      id: Date.now(),
+      user: "User (Student)",
+      role: "Student",
+      time: fmtTime(),
+      text,
+    };
+    setMessagesByChannel((prev) => ({
+      ...prev,
+      [channel]: [...(prev[channel] ?? []), userMsg],
+    }));
+    setMessage("");
+
+    if (replyTimer.current) window.clearTimeout(replyTimer.current);
+    replyTimer.current = window.setTimeout(() => {
+      const reply: Message = {
+        id: Date.now() + 1,
+        user: "Dr. Sarah Jansen",
+        role: "Mentor",
+        time: fmtTime(),
+        text: mentorReplies[Math.floor(Math.random() * mentorReplies.length)],
+      };
+      setMessagesByChannel((prev) => ({
+        ...prev,
+        [channel]: [...(prev[channel] ?? []), reply],
+      }));
+    }, 3000);
+  };
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
@@ -154,6 +233,15 @@ const Community = () => {
             <span className="text-xs text-muted-foreground ml-2">— {currentCommunity?.name}</span>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant={coLearning ? "default" : "outline"}
+              onClick={() => setCoLearning((v) => !v)}
+              className={`text-xs ${coLearning ? "bg-primary text-primary-foreground hover:bg-primary/90" : "border-border hover:bg-accent"}`}
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              {coLearning ? "End session" : "Start Co-Learning Session"}
+            </Button>
             <div className="relative hidden sm:block">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input placeholder="Search notes…" className="h-8 pl-8 text-xs w-44 bg-card" />
@@ -164,10 +252,23 @@ const Community = () => {
           </div>
         </header>
 
-        {/* Messages — notebook entries */}
+        {coLearning && (
+          <div className="px-6 py-2 border-b border-border bg-accent/60">
+            <p className="text-xs text-accent-foreground">
+              <span className="accent-italic">Active room</span> · #{activeChannel}-Lab · 1 participant — waiting for partner…
+            </p>
+          </div>
+        )}
+
+        {/* Messages */}
         <ScrollArea className="flex-1 px-8 py-6">
           <div className="max-w-3xl mx-auto space-y-6">
-            {mockMessages.map((msg) => (
+            {feed.length === 0 && (
+              <p className="text-sm text-muted-foreground accent-italic text-center py-8">
+                no notes yet in #{activeChannel}
+              </p>
+            )}
+            {feed.map((msg) => (
               <article key={msg.id} className="group">
                 {msg.pinned && (
                   <div className="flex items-center gap-1 text-[10px] text-primary mb-1 accent-italic">
@@ -187,20 +288,6 @@ const Community = () => {
                     {msg.code}
                   </pre>
                 )}
-                {msg.replies && msg.replies.length > 0 && (
-                  <div className="ml-8 mt-3 space-y-2 border-l border-dotted border-border pl-4">
-                    <p className="accent-italic text-[11px] text-muted-foreground">margin notes</p>
-                    {msg.replies.map((r, i) => (
-                      <div key={i}>
-                        <header className="flex items-baseline gap-2 mb-0.5">
-                          <span className="text-xs font-medium text-foreground">{r.user}</span>
-                          <span className="text-[10px] text-muted-foreground">{r.time}</span>
-                        </header>
-                        <p className="text-xs text-foreground/80 leading-relaxed">{r.text}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
                 <div className="hidden group-hover:flex items-center gap-3 mt-2 ml-3 text-muted-foreground">
                   <button className="flex items-center gap-1 text-[11px] hover:text-primary transition-colors">
                     <ThumbsUp className="h-3 w-3" /> agree
@@ -214,28 +301,32 @@ const Community = () => {
                 </div>
               </article>
             ))}
+            <div ref={feedEndRef} />
           </div>
         </ScrollArea>
 
         {/* Composer */}
         <div className="p-4 border-t border-border bg-card">
-          <div className="max-w-3xl mx-auto flex items-center gap-2 border border-border rounded-md px-3 py-2 bg-background focus-within:border-primary transition-colors">
+          <form
+            onSubmit={(e) => { e.preventDefault(); send(); }}
+            className="max-w-3xl mx-auto flex items-center gap-2 border border-border rounded-md px-3 py-2 bg-background focus-within:border-primary transition-colors"
+          >
             <input
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder={`Add a note to #${activeChannel}…`}
               className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
             />
-            <button className="text-muted-foreground hover:text-primary transition-colors">
+            <button type="button" className="text-muted-foreground hover:text-primary transition-colors">
               <Code className="h-4 w-4" />
             </button>
-            <button className="text-muted-foreground hover:text-primary transition-colors">
+            <button type="button" className="text-muted-foreground hover:text-primary transition-colors">
               <Paperclip className="h-4 w-4" />
             </button>
-            <Button size="icon" className="h-7 w-7 bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button type="submit" size="icon" className="h-7 w-7 bg-primary text-primary-foreground hover:bg-primary/90">
               <Send className="h-3.5 w-3.5" />
             </Button>
-          </div>
+          </form>
         </div>
       </div>
 
