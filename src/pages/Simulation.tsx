@@ -126,6 +126,7 @@ const Simulation = () => {
   const [scenario, setScenario] = useState<Scenario>("normal");
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
   const [serviceFault, setServiceFault] = useState<string | null>(null);
+  const [pendingScenario, setPendingScenario] = useState<Scenario | null>(null);
 
   const [hr, setHr] = useState([72]);
   const [rr, setRr] = useState([16]);
