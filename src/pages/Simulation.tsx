@@ -565,6 +565,52 @@ const Simulation = () => {
           </p>
         </aside>
       </div>
+
+      {/* Clinical scenario context modal */}
+      <Dialog open={!!pendingScenario} onOpenChange={(o) => !o && setPendingScenario(null)}>
+        <DialogContent className="bg-card border-border max-w-lg">
+          {pendingScenario && pendingScenario !== "normal" && (
+            <>
+              <DialogHeader>
+                <p className="accent-italic text-xs text-warning flex items-center gap-1.5">
+                  <AlertTriangle className="h-3.5 w-3.5" /> Clinical scenario briefing
+                </p>
+                <DialogTitle className="text-foreground">{SCENARIO_BRIEF[pendingScenario].title}</DialogTitle>
+                <DialogDescription className="accent-italic text-muted-foreground">
+                  {SCENARIO_BRIEF[pendingScenario].subtitle}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3 text-sm text-foreground/85">
+                <p className="leading-relaxed">{SCENARIO_BRIEF[pendingScenario].context}</p>
+                <div>
+                  <p className="accent-italic text-xs text-primary mb-1">§ Expected waveform findings</p>
+                  <ul className="list-disc pl-5 text-[12px] text-foreground/80 space-y-0.5">
+                    {SCENARIO_BRIEF[pendingScenario].signs.map((s) => <li key={s}>{s}</li>)}
+                  </ul>
+                </div>
+                <div>
+                  <p className="accent-italic text-xs text-primary mb-1">§ Safety protocol</p>
+                  <ol className="list-decimal pl-5 text-[12px] text-foreground/80 space-y-0.5">
+                    {SCENARIO_BRIEF[pendingScenario].protocol.map((s) => <li key={s}>{s}</li>)}
+                  </ol>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" size="sm" className="border-border" onClick={() => setPendingScenario(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  onClick={() => { setScenario(pendingScenario); setPendingScenario(null); }}
+                >
+                  Acknowledge & Apply Scenario
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
