@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, CircuitBoard, Trash2, X, MousePointer } from "lucide-react";
+import { ArrowLeft, CircuitBoard, Trash2, X, MousePointer, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 
 type CompType = "electrode" | "opamp" | "resistor" | "capacitor" | "ground";
