@@ -19,6 +19,11 @@ const LIBRARY: { type: CompType; label: string }[] = [
 
 const snap = (n: number) => Math.round(n / SNAP) * SNAP;
 
+// Pin marker — solder-point at component connection node
+const Pin = ({ cx, cy }: { cx: number; cy: number }) => (
+  <circle cx={cx} cy={cy} r={2.4} fill="hsl(var(--primary))" stroke="hsl(var(--card))" strokeWidth={0.8} />
+);
+
 // Inline SVG symbol — designed to sit in an 80x40 box centered on (40,20)
 const Symbol = ({ type, className = "" }: { type: CompType; className?: string }) => {
   const stroke = "hsl(var(--ink))";
@@ -30,6 +35,7 @@ const Symbol = ({ type, className = "" }: { type: CompType; className?: string }
           <circle cx="18" cy="20" r="10" fill="hsl(var(--card))" stroke={stroke} strokeWidth={sw} />
           <circle cx="18" cy="20" r="3" fill={stroke} />
           <line x1="28" y1="20" x2="78" y2="20" stroke={stroke} strokeWidth={sw} />
+          <Pin cx={78} cy={20} />
         </svg>
       );
     case "opamp":
@@ -41,6 +47,9 @@ const Symbol = ({ type, className = "" }: { type: CompType; className?: string }
           <text x="24" y="16" fontSize="9" fill={stroke}>−</text>
           <text x="24" y="32" fontSize="9" fill={stroke}>+</text>
           <line x1="62" y1="20" x2="78" y2="20" stroke={stroke} strokeWidth={sw} />
+          <Pin cx={2} cy={13} />
+          <Pin cx={2} cy={27} />
+          <Pin cx={78} cy={20} />
         </svg>
       );
     case "resistor":
@@ -49,6 +58,8 @@ const Symbol = ({ type, className = "" }: { type: CompType; className?: string }
           <line x1="2" y1="20" x2="18" y2="20" stroke={stroke} strokeWidth={sw} />
           <polyline points="18,20 22,10 30,30 38,10 46,30 54,10 62,20" fill="none" stroke={stroke} strokeWidth={sw} />
           <line x1="62" y1="20" x2="78" y2="20" stroke={stroke} strokeWidth={sw} />
+          <Pin cx={2} cy={20} />
+          <Pin cx={78} cy={20} />
         </svg>
       );
     case "capacitor":
@@ -58,6 +69,8 @@ const Symbol = ({ type, className = "" }: { type: CompType; className?: string }
           <line x1="36" y1="6" x2="36" y2="34" stroke={stroke} strokeWidth={sw} />
           <line x1="44" y1="6" x2="44" y2="34" stroke={stroke} strokeWidth={sw} />
           <line x1="44" y1="20" x2="78" y2="20" stroke={stroke} strokeWidth={sw} />
+          <Pin cx={2} cy={20} />
+          <Pin cx={78} cy={20} />
         </svg>
       );
     case "ground":
@@ -67,6 +80,7 @@ const Symbol = ({ type, className = "" }: { type: CompType; className?: string }
           <line x1="22" y1="18" x2="58" y2="18" stroke={stroke} strokeWidth={sw} />
           <line x1="28" y1="25" x2="52" y2="25" stroke={stroke} strokeWidth={sw} />
           <line x1="34" y1="32" x2="46" y2="32" stroke={stroke} strokeWidth={sw} />
+          <Pin cx={40} cy={2} />
         </svg>
       );
   }
