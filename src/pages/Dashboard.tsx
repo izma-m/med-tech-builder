@@ -69,7 +69,7 @@ const Dashboard = () => {
         <div className="p-5 border-b border-sidebar-border">
           <div className="flex items-center gap-2">
             <Activity className="h-5 w-5 text-primary" />
-            <span className="text-lg text-foreground font-medium">ClinSim</span>
+            <span className="text-lg text-foreground font-medium">Sim-ie</span>
           </div>
           <p className="accent-italic text-xs text-muted-foreground mt-1 ml-7">lab notebook</p>
         </div>

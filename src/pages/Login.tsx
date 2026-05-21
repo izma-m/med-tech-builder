@@ -21,7 +21,7 @@ const Login = () => {
         <div className="bg-card border border-border rounded-md p-10">
           <div className="text-center mb-8">
             <p className="accent-italic text-primary text-sm tracking-wide mb-1">Lab Notebook · v1</p>
-            <h1 className="text-3xl text-foreground font-medium">ClinSim</h1>
+            <h1 className="text-3xl text-foreground font-medium">Sim-ie</h1>
             <div className="w-12 h-px bg-border mx-auto mt-3" />
           </div>
 
