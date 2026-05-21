@@ -2,6 +2,7 @@ import { Activity, Stethoscope, Monitor, Pill, HeartPulse, Accessibility, FlaskC
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import EcgMachineIcon from "@/components/EcgMachineIcon";
 
 const navItems = [
   { label: "Home", icon: Home, path: "/dashboard" },
