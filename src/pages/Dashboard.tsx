@@ -1,7 +1,8 @@
-import { Activity, Heart, Brain, Monitor, Cpu, Scan, CircuitBoard, BarChart3, FolderOpen, Settings, Home, Search, Bell, ChevronRight, Play, MessageSquare } from "lucide-react";
+import { Activity, Stethoscope, Monitor, Pill, HeartPulse, Accessibility, FlaskConical, CircuitBoard, BarChart3, FolderOpen, Settings, Home, Search, Bell, ChevronRight, Play, MessageSquare } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import EcgMachineIcon from "@/components/EcgMachineIcon";
 
 const navItems = [
   { label: "Home", icon: Home, path: "/dashboard" },
@@ -15,39 +16,57 @@ const navItems = [
 
 const categories = [
   {
-    title: "Bio-Signals",
-    icon: Heart,
+    title: "Diagnostic Devices",
+    icon: Stethoscope,
     items: [
-      { name: "ECG", desc: "Electrocardiogram signals" },
-      { name: "EEG", desc: "Brain wave analysis" },
-      { name: "EMG", desc: "Muscle signal processing" },
+      { name: "ECG Machine", desc: "12-lead cardiac diagnostics" },
+      { name: "EEG System", desc: "Brain wave acquisition" },
+      { name: "Ultrasound", desc: "Echo & doppler imaging" },
     ],
   },
   {
-    title: "Medical Devices",
+    title: "Monitoring Devices",
     icon: Monitor,
     items: [
-      { name: "Patient Monitor", desc: "Multi-parameter monitoring" },
-      { name: "Ventilator", desc: "Respiratory simulation" },
-      { name: "Infusion Pump", desc: "Drug delivery systems" },
+      { name: "Patient Monitor", desc: "Multi-parameter vitals" },
+      { name: "Pulse Oximeter", desc: "SpO₂ + plethysmography" },
+      { name: "Holter Recorder", desc: "Ambulatory ECG" },
     ],
   },
   {
-    title: "Imaging Systems",
-    icon: Scan,
+    title: "Therapeutic Devices",
+    icon: Pill,
     items: [
-      { name: "X-Ray", desc: "Radiographic imaging" },
-      { name: "CT Scan", desc: "Computed tomography" },
-      { name: "MRI", desc: "Magnetic resonance imaging" },
+      { name: "Infusion Pump", desc: "Drug delivery control" },
+      { name: "Defibrillator", desc: "Cardiac rhythm therapy" },
+      { name: "Electrosurgical", desc: "Cut & coagulation unit" },
     ],
   },
   {
-    title: "Circuit Systems",
-    icon: Cpu,
+    title: "Life Support Devices",
+    icon: HeartPulse,
     items: [
-      { name: "Amplifiers", desc: "Signal amplification" },
-      { name: "Filters", desc: "Noise reduction circuits" },
-      { name: "Sensors", desc: "Biomedical sensors" },
+      { name: "Ventilator", desc: "Mechanical respiration" },
+      { name: "Anesthesia Machine", desc: "Gas + ventilation mix" },
+      { name: "ECMO Console", desc: "Extracorporeal oxygenation" },
+    ],
+  },
+  {
+    title: "Rehabilitation Devices",
+    icon: Accessibility,
+    items: [
+      { name: "TENS Unit", desc: "Nerve stimulation" },
+      { name: "Smart Prosthetics", desc: "EMG-driven actuation" },
+      { name: "Gait Analyzer", desc: "Motion + force sensing" },
+    ],
+  },
+  {
+    title: "Laboratory / Analytical Devices",
+    icon: FlaskConical,
+    items: [
+      { name: "Blood Analyzer", desc: "CBC & chemistry panels" },
+      { name: "Centrifuge", desc: "Sample separation" },
+      { name: "Spectrophotometer", desc: "Absorbance measurement" },
     ],
   },
 ];
@@ -69,7 +88,7 @@ const Dashboard = () => {
         <div className="p-5 border-b border-sidebar-border">
           <div className="flex items-center gap-2">
             <Activity className="h-5 w-5 text-primary" />
-            <span className="text-lg text-foreground font-medium">ClinSim</span>
+            <span className="text-lg text-foreground font-medium">Sim-ie</span>
           </div>
           <p className="accent-italic text-xs text-muted-foreground mt-1 ml-7">lab notebook</p>
         </div>
@@ -144,8 +163,8 @@ const Dashboard = () => {
                   <Play className="h-4 w-4 mr-2" /> Start Experiment
                 </Button>
               </div>
-              <div className="hidden md:flex w-32 h-32 items-center justify-center border border-border rounded-md bg-accent/40">
-                <Heart className="h-12 w-12 text-primary" strokeWidth={1.25} />
+              <div className="hidden md:flex w-40 h-32 items-center justify-center border border-border rounded-md bg-accent/40 p-2">
+                <EcgMachineIcon className="w-full h-full text-primary" />
               </div>
             </div>
           </section>
@@ -156,7 +175,7 @@ const Dashboard = () => {
               <h2 className="accent-italic text-lg text-foreground">Simulation Categories</h2>
               <span className="text-xs text-muted-foreground">{categories.length} sections</span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {categories.map((cat) => (
                 <div key={cat.title} className="paper-card p-5 hover-tint cursor-pointer group">
                   <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border">

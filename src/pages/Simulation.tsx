@@ -6,6 +6,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 type Scenario = "normal" | "vtach" | "apnea" | "hypoxia";
 type Version = "intro" | "bme" | "pcb" | "service" | "user";
@@ -24,6 +25,57 @@ const SCENARIOS: { id: Scenario; label: string }[] = [
   { id: "apnea", label: "Apnea" },
   { id: "hypoxia", label: "Hypoxia" },
 ];
+
+const SCENARIO_BRIEF: Record<Exclude<Scenario, "normal">, { title: string; subtitle: string; context: string; signs: string[]; protocol: string[] }> = {
+  vtach: {
+    title: "Ventricular Tachycardia (V-Tach)",
+    subtitle: "Wide-complex tachyarrhythmia originating below the AV node",
+    context:
+      "Ventricular tachycardia is a life-threatening rhythm in which ectopic ventricular foci drive the heart at 150–250 bpm. Diastolic filling is severely reduced, cardiac output falls, and the patient may progress to ventricular fibrillation if untreated.",
+    signs: [
+      "Wide QRS (>120 ms), monomorphic complexes",
+      "Systolic BP typically drops 30–50%",
+      "Loss of P-waves, AV dissociation",
+    ],
+    protocol: [
+      "Confirm pulse — pulseless VT → defibrillate (CPR + ACLS)",
+      "Stable VT with pulse → IV amiodarone 150 mg over 10 min",
+      "Prepare synchronized cardioversion if hemodynamics deteriorate",
+    ],
+  },
+  apnea: {
+    title: "Apneic Event",
+    subtitle: "Cessation of spontaneous respiration > 20 seconds",
+    context:
+      "Apnea is detected when respiratory effort and end-tidal CO₂ both collapse. Within 30–60 seconds SpO₂ begins to fall, and prolonged apnea leads to hypoxic injury and bradycardia. The capnography trace flattening is the earliest and most specific indicator.",
+    signs: [
+      "Flat RESP impedance trace",
+      "End-tidal CO₂ → 0 mmHg",
+      "Delayed SpO₂ desaturation (30–60 s lag)",
+    ],
+    protocol: [
+      "Stimulate the patient and confirm airway patency",
+      "Bag-valve-mask ventilation at 10–12 breaths/min, 100% O₂",
+      "Escalate to advanced airway if no spontaneous return in 60 s",
+    ],
+  },
+  hypoxia: {
+    title: "Hypoxemia",
+    subtitle: "SpO₂ < 90% with inadequate tissue oxygenation",
+    context:
+      "Hypoxia represents a mismatch between oxygen delivery and demand. The pulse-oximeter pleth amplitude collapses, SpO₂ snaps below 90%, and the patient may show cyanosis, tachycardia, or altered mental status before bradycardia and arrest.",
+    signs: [
+      "SpO₂ trending < 90% (here forced to 82%)",
+      "Reduced plethysmograph amplitude",
+      "Compensatory tachypnea and tachycardia",
+    ],
+    protocol: [
+      "Apply supplemental O₂, titrate to SpO₂ ≥ 94%",
+      "Check probe placement and perfusion before trusting reading",
+      "Investigate cause: V/Q mismatch, shunt, hypoventilation, diffusion",
+    ],
+  },
+};
 
 type Hotspot = {
   id: string;
@@ -74,6 +126,7 @@ const Simulation = () => {
   const [scenario, setScenario] = useState<Scenario>("normal");
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
   const [serviceFault, setServiceFault] = useState<string | null>(null);
+  const [pendingScenario, setPendingScenario] = useState<Scenario | null>(null);
 
   const [hr, setHr] = useState([72]);
   const [rr, setRr] = useState([16]);
@@ -293,10 +346,10 @@ const Simulation = () => {
         </div>
       </header>
 
-      {/* Version tabs */}
-      <div className="border-b border-border bg-card/60 px-4 py-2 shrink-0">
+      {/* Version tabs - centered in workspace */}
+      <div className="border-b border-border bg-card/60 px-4 py-2 shrink-0 flex justify-center">
         <Tabs value={version} onValueChange={(v) => setVersion(v as Version)}>
-          <TabsList className="bg-muted border border-border h-9 flex-wrap">
+          <TabsList className="bg-muted border border-border h-9 flex-wrap mx-auto">
             {VERSIONS.map((v) => (
               <TabsTrigger key={v.id} value={v.id} className="text-xs data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
                 {v.label}
@@ -327,7 +380,10 @@ const Simulation = () => {
               {SCENARIOS.map((s) => (
                 <button
                   key={s.id}
-                  onClick={() => setScenario(s.id)}
+                  onClick={() => {
+                    if (s.id === "normal") setScenario("normal");
+                    else setPendingScenario(s.id);
+                  }}
                   className={`text-xs px-2.5 py-2 rounded-md border transition-colors text-left leading-tight ${
                     scenario === s.id
                       ? "border-primary bg-accent text-accent-foreground font-medium"
@@ -509,6 +565,52 @@ const Simulation = () => {
           </p>
         </aside>
       </div>
+
+      {/* Clinical scenario context modal */}
+      <Dialog open={!!pendingScenario} onOpenChange={(o) => !o && setPendingScenario(null)}>
+        <DialogContent className="bg-card border-border max-w-lg">
+          {pendingScenario && pendingScenario !== "normal" && (
+            <>
+              <DialogHeader>
+                <p className="accent-italic text-xs text-warning flex items-center gap-1.5">
+                  <AlertTriangle className="h-3.5 w-3.5" /> Clinical scenario briefing
+                </p>
+                <DialogTitle className="text-foreground">{SCENARIO_BRIEF[pendingScenario].title}</DialogTitle>
+                <DialogDescription className="accent-italic text-muted-foreground">
+                  {SCENARIO_BRIEF[pendingScenario].subtitle}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3 text-sm text-foreground/85">
+                <p className="leading-relaxed">{SCENARIO_BRIEF[pendingScenario].context}</p>
+                <div>
+                  <p className="accent-italic text-xs text-primary mb-1">§ Expected waveform findings</p>
+                  <ul className="list-disc pl-5 text-[12px] text-foreground/80 space-y-0.5">
+                    {SCENARIO_BRIEF[pendingScenario].signs.map((s) => <li key={s}>{s}</li>)}
+                  </ul>
+                </div>
+                <div>
+                  <p className="accent-italic text-xs text-primary mb-1">§ Safety protocol</p>
+                  <ol className="list-decimal pl-5 text-[12px] text-foreground/80 space-y-0.5">
+                    {SCENARIO_BRIEF[pendingScenario].protocol.map((s) => <li key={s}>{s}</li>)}
+                  </ol>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" size="sm" className="border-border" onClick={() => setPendingScenario(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  onClick={() => { setScenario(pendingScenario); setPendingScenario(null); }}
+                >
+                  Acknowledge & Apply Scenario
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
