@@ -6,6 +6,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 type Scenario = "normal" | "vtach" | "apnea" | "hypoxia";
 type Version = "intro" | "bme" | "pcb" | "service" | "user";
@@ -24,6 +25,57 @@ const SCENARIOS: { id: Scenario; label: string }[] = [
   { id: "apnea", label: "Apnea" },
   { id: "hypoxia", label: "Hypoxia" },
 ];
+
+const SCENARIO_BRIEF: Record<Exclude<Scenario, "normal">, { title: string; subtitle: string; context: string; signs: string[]; protocol: string[] }> = {
+  vtach: {
+    title: "Ventricular Tachycardia (V-Tach)",
+    subtitle: "Wide-complex tachyarrhythmia originating below the AV node",
+    context:
+      "Ventricular tachycardia is a life-threatening rhythm in which ectopic ventricular foci drive the heart at 150–250 bpm. Diastolic filling is severely reduced, cardiac output falls, and the patient may progress to ventricular fibrillation if untreated.",
+    signs: [
+      "Wide QRS (>120 ms), monomorphic complexes",
+      "Systolic BP typically drops 30–50%",
+      "Loss of P-waves, AV dissociation",
+    ],
+    protocol: [
+      "Confirm pulse — pulseless VT → defibrillate (CPR + ACLS)",
+      "Stable VT with pulse → IV amiodarone 150 mg over 10 min",
+      "Prepare synchronized cardioversion if hemodynamics deteriorate",
+    ],
+  },
+  apnea: {
+    title: "Apneic Event",
+    subtitle: "Cessation of spontaneous respiration > 20 seconds",
+    context:
+      "Apnea is detected when respiratory effort and end-tidal CO₂ both collapse. Within 30–60 seconds SpO₂ begins to fall, and prolonged apnea leads to hypoxic injury and bradycardia. The capnography trace flattening is the earliest and most specific indicator.",
+    signs: [
+      "Flat RESP impedance trace",
+      "End-tidal CO₂ → 0 mmHg",
+      "Delayed SpO₂ desaturation (30–60 s lag)",
+    ],
+    protocol: [
+      "Stimulate the patient and confirm airway patency",
+      "Bag-valve-mask ventilation at 10–12 breaths/min, 100% O₂",
+      "Escalate to advanced airway if no spontaneous return in 60 s",
+    ],
+  },
+  hypoxia: {
+    title: "Hypoxemia",
+    subtitle: "SpO₂ < 90% with inadequate tissue oxygenation",
+    context:
+      "Hypoxia represents a mismatch between oxygen delivery and demand. The pulse-oximeter pleth amplitude collapses, SpO₂ snaps below 90%, and the patient may show cyanosis, tachycardia, or altered mental status before bradycardia and arrest.",
+    signs: [
+      "SpO₂ trending < 90% (here forced to 82%)",
+      "Reduced plethysmograph amplitude",
+      "Compensatory tachypnea and tachycardia",
+    ],
+    protocol: [
+      "Apply supplemental O₂, titrate to SpO₂ ≥ 94%",
+      "Check probe placement and perfusion before trusting reading",
+      "Investigate cause: V/Q mismatch, shunt, hypoventilation, diffusion",
+    ],
+  },
+};
 
 type Hotspot = {
   id: string;
