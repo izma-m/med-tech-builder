@@ -321,13 +321,14 @@ const CircuitBuilder = () => {
               </div>
               <div className="h-32 rounded border border-border bg-background graph-paper relative overflow-hidden">
                 <svg viewBox="0 0 800 120" preserveAspectRatio="none" className="w-full h-full">
-                  <OutputWave amplified={hasOpAmp} smoothed={hasCap} />
+                  <OutputWave gain={hasOpAmp ? gain : 1} smoothed={hasCap} />
                 </svg>
               </div>
-              <div className="grid grid-cols-3 gap-3 mt-3 text-[11px]">
-                <Metric label="Amplitude" value={hasOpAmp ? "1.0 V" : "0.05 V"} />
+              <div className="grid grid-cols-4 gap-3 mt-3 text-[11px]">
+                <Metric label="Input" value="50 mV" />
+                <Metric label="Gain" value={`${(hasOpAmp ? gain : 1).toFixed(1)}×`} />
+                <Metric label="V_out (pk)" value={`${(0.05 * (hasOpAmp ? gain : 1)).toFixed(2)} V`} />
                 <Metric label="Noise" value={hasCap ? "low" : "high"} />
-                <Metric label="Stages" value={`${chain.length}`} />
               </div>
             </div>
           )}
@@ -344,9 +345,9 @@ const Metric = ({ label, value }: { label: string; value: string }) => (
   </div>
 );
 
-// Static periodic ECG-like SVG path; visual indicator of output
-const OutputWave = ({ amplified, smoothed }: { amplified: boolean; smoothed: boolean }) => {
-  const amp = amplified ? 38 : 6;
+// Static periodic ECG-like SVG path; amplitude tracks computed op-amp gain
+const OutputWave = ({ gain, smoothed }: { gain: number; smoothed: boolean }) => {
+  const amp = Math.min(50, 3 + gain * 3.5);
   const wobble = smoothed ? 0 : 4;
   const mid = 60;
   let d = `M 0 ${mid}`;
