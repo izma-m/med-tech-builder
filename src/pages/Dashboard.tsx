@@ -1,4 +1,4 @@
-import { Activity, Heart, Brain, Monitor, Cpu, Scan, CircuitBoard, BarChart3, FolderOpen, Settings, Home, Search, Bell, ChevronRight, Play, MessageSquare } from "lucide-react";
+import { Activity, Stethoscope, Monitor, Pill, HeartPulse, Accessibility, FlaskConical, CircuitBoard, BarChart3, FolderOpen, Settings, Home, Search, Bell, ChevronRight, Play, MessageSquare } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
