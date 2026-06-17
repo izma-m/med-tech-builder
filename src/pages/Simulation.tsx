@@ -623,6 +623,97 @@ const Simulation = () => {
           </p>
         </aside>
       </div>
+      </>)}
+
+      {/* Version detail modal */}
+      <Dialog open={!!versionModal} onOpenChange={(o) => !o && setVersionModal(null)}>
+        <DialogContent className="bg-card border-border max-w-2xl">
+          {versionModal && (
+            <>
+              <DialogHeader>
+                <p className="accent-italic text-xs text-primary">§ Module reference</p>
+                <DialogTitle className="text-foreground">
+                  {VERSIONS.find((v) => v.id === versionModal)?.label}
+                </DialogTitle>
+                <DialogDescription className="accent-italic text-muted-foreground">
+                  {deviceName} — instructional content
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 text-sm text-foreground/85 max-h-[60vh] overflow-y-auto pr-1">
+                <p className="leading-relaxed">{VERSIONS.find((v) => v.id === versionModal)?.body}</p>
+                {versionModal === "service" && (
+                  <div className="pt-2 border-t border-border">
+                    <ServicePanel fault={serviceFault} setFault={setServiceFault} />
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button size="sm" variant="outline" className="border-border" onClick={() => setVersionModal(null)}>
+                  Close & return to simulation
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Share modal */}
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent className="bg-card border-border max-w-md">
+          <DialogHeader>
+            <p className="accent-italic text-xs text-primary">§ Share simulation</p>
+            <DialogTitle className="text-foreground">Invite others to this experiment</DialogTitle>
+            <DialogDescription className="accent-italic text-muted-foreground">
+              Anyone with the link can open this {deviceName} session.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setShareMode("view")}
+                className={`flex items-start gap-2 text-left p-3 rounded-md border transition-colors ${
+                  shareMode === "view" ? "border-primary bg-accent" : "border-border bg-card hover:bg-accent"
+                }`}
+              >
+                <Eye className="h-4 w-4 text-primary mt-0.5" />
+                <div>
+                  <p className="text-sm text-foreground">View only</p>
+                  <p className="text-[11px] text-muted-foreground">Read the session, cannot edit.</p>
+                </div>
+              </button>
+              <button
+                onClick={() => setShareMode("edit")}
+                className={`flex items-start gap-2 text-left p-3 rounded-md border transition-colors ${
+                  shareMode === "edit" ? "border-primary bg-accent" : "border-border bg-card hover:bg-accent"
+                }`}
+              >
+                <Pencil className="h-4 w-4 text-primary mt-0.5" />
+                <div>
+                  <p className="text-sm text-foreground">Editable</p>
+                  <p className="text-[11px] text-muted-foreground">Co-learn and tweak parameters.</p>
+                </div>
+              </button>
+            </div>
+            <div className="flex items-center gap-2 border border-border rounded-md bg-muted/50 p-2">
+              <input
+                readOnly
+                value={shareUrl}
+                className="flex-1 bg-transparent text-xs font-mono text-foreground outline-none truncate"
+              />
+              <Button size="sm" onClick={copyShareUrl} className="bg-primary text-primary-foreground hover:bg-primary/90 h-8">
+                {copied ? <Check className="h-3.5 w-3.5 mr-1" /> : <Copy className="h-3.5 w-3.5 mr-1" />}
+                {copied ? "Copied" : "Copy"}
+              </Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground accent-italic">
+              {shareMode === "edit"
+                ? "Editable links include a collaboration token. Revoke anytime from project settings."
+                : "View-only links are safe to share publicly with students and colleagues."}
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Clinical scenario context modal */}
       <Dialog open={!!pendingScenario} onOpenChange={(o) => !o && setPendingScenario(null)}>
