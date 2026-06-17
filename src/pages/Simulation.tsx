@@ -133,21 +133,74 @@ const HOTSPOTS: Record<string, Hotspot> = {
   },
 };
 
+const DEVICE_NAMES: Record<string, string> = {
+  "patient-monitor": "Patient Monitor",
+  "ecg-machine": "ECG Machine",
+  "eeg-system": "EEG System",
+  "ultrasound": "Ultrasound",
+  "mri": "MRI Scanner",
+  "pulse-oximeter": "Pulse Oximeter",
+  "holter": "Holter Recorder",
+  "infusion-pump": "Infusion Pump",
+  "defibrillator": "Defibrillator",
+  "esu": "Electrosurgical Unit",
+  "electrosurgical": "Electrosurgical Unit",
+  "ventilator": "Ventilator",
+  "anesthesia": "Anesthesia Machine",
+  "anesthesia-machine": "Anesthesia Machine",
+  "ecmo": "ECMO Console",
+  "ecmo-console": "ECMO Console",
+  "tens": "TENS Unit",
+  "tens-unit": "TENS Unit",
+  "prosthetics": "Smart Prosthetics",
+  "smart-prosthetics": "Smart Prosthetics",
+  "gait": "Gait Analyzer",
+  "gait-analyzer": "Gait Analyzer",
+  "blood-analyzer": "Blood Analyzer",
+  "centrifuge": "Centrifuge",
+  "spectro": "Spectrophotometer",
+  "spectrophotometer": "Spectrophotometer",
+};
+
 const Simulation = () => {
   const navigate = useNavigate();
+  const { deviceId = "patient-monitor" } = useParams();
+  const deviceName = DEVICE_NAMES[deviceId] ?? "Medical Device";
+  const isPatientMonitor = deviceId === "patient-monitor";
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
-  const [version, setVersion] = useState<Version>("user");
+  const [versionModal, setVersionModal] = useState<Version | null>(null);
   const [scenario, setScenario] = useState<Scenario>("normal");
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
   const [serviceFault, setServiceFault] = useState<string | null>(null);
   const [pendingScenario, setPendingScenario] = useState<Scenario | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareMode, setShareMode] = useState<"view" | "edit">("view");
+  const [copied, setCopied] = useState(false);
 
   const [hr, setHr] = useState([72]);
   const [rr, setRr] = useState([16]);
   const [spo2, setSpo2] = useState([98]);
   const [sbp, setSbp] = useState([120]);
   const [noise, setNoise] = useState([6]);
+
+  const shareUrl = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    const base = `${window.location.origin}/simulation/${deviceId}`;
+    return shareMode === "edit" ? `${base}?mode=edit&token=collab-${deviceId}-7a3f` : `${base}?mode=view`;
+  }, [deviceId, shareMode]);
+
+  const copyShareUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      toast.success("Link copied to clipboard");
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("Could not copy link");
+    }
+  };
 
   // Auto-apply scenario side-effects
   useEffect(() => {
