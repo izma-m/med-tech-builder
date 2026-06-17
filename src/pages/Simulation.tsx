@@ -828,4 +828,70 @@ const ServicePanel = ({
   );
 };
 
+const CircuitSkeleton = () => (
+  <svg viewBox="0 0 220 120" className="w-full h-auto border border-border rounded bg-background">
+    <defs>
+      <pattern id="cs-grid" width="10" height="10" patternUnits="userSpaceOnUse">
+        <path d="M 10 0 L 0 0 0 10" fill="none" stroke="hsl(var(--border))" strokeWidth="0.3" />
+      </pattern>
+    </defs>
+    <rect width="220" height="120" fill="url(#cs-grid)" />
+    {/* AFE block */}
+    <g>
+      <rect x="8" y="20" width="50" height="36" rx="2" fill="hsl(var(--accent))" stroke="hsl(var(--primary))" strokeWidth="1" />
+      <text x="33" y="42" textAnchor="middle" fontSize="7" fontStyle="italic" fill="hsl(var(--ink))">AFE</text>
+    </g>
+    {/* MCU */}
+    <g>
+      <rect x="80" y="14" width="60" height="48" rx="2" fill="hsl(var(--secondary))" stroke="hsl(var(--primary))" strokeWidth="1" />
+      <text x="110" y="42" textAnchor="middle" fontSize="7" fontStyle="italic" fill="hsl(var(--ink))">MCU / DSP</text>
+      {[0,1,2,3,4,5].map((i) => <rect key={`pt-${i}`} x={84 + i*9} y={10} width="2" height="4" fill="hsl(var(--muted-foreground))" />)}
+      {[0,1,2,3,4,5].map((i) => <rect key={`pb-${i}`} x={84 + i*9} y={62} width="2" height="4" fill="hsl(var(--muted-foreground))" />)}
+    </g>
+    {/* Power */}
+    <g>
+      <rect x="160" y="14" width="52" height="22" rx="2" fill="hsl(var(--muted))" stroke="hsl(var(--border))" strokeWidth="1" />
+      <text x="186" y="28" textAnchor="middle" fontSize="6.5" fontStyle="italic" fill="hsl(var(--ink-muted))">Power</text>
+    </g>
+    {/* Comm */}
+    <g>
+      <rect x="160" y="40" width="52" height="22" rx="2" fill="hsl(var(--muted))" stroke="hsl(var(--border))" strokeWidth="1" />
+      <text x="186" y="54" textAnchor="middle" fontSize="6.5" fontStyle="italic" fill="hsl(var(--ink-muted))">Comm</text>
+    </g>
+    {/* IO bar */}
+    <g>
+      <rect x="8" y="82" width="204" height="26" rx="2" fill="hsl(var(--card))" stroke="hsl(var(--border))" strokeWidth="1" />
+      {[0,1,2,3,4,5,6].map((i) => (
+        <circle key={i} cx={20 + i*28} cy={95} r="4" fill="hsl(var(--background))" stroke="hsl(var(--primary))" strokeWidth="0.8" />
+      ))}
+      <text x="110" y="105" textAnchor="middle" fontSize="6.5" fontStyle="italic" fill="hsl(var(--ink-muted))">Sensor I/O</text>
+    </g>
+    {/* Traces */}
+    <path d="M58 32 H80 M58 44 H80 M140 24 H160 M140 52 H160 M110 62 V82" stroke="hsl(var(--primary))" strokeWidth="0.7" fill="none" />
+  </svg>
+);
+
+const ComingSoon = ({ deviceName, onBack }: { deviceName: string; onBack: () => void }) => (
+  <div className="flex-1 notebook-grid flex items-center justify-center p-8">
+    <div className="paper-card max-w-md w-full p-8 text-center space-y-3">
+      <p className="accent-italic text-xs text-primary">§ In the lab</p>
+      <h2 className="text-xl text-foreground font-medium">{deviceName} simulation is on the bench</h2>
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        We're drafting the signal model, hardware diagram, and clinical scenarios for this device.
+        In the meantime, try the fully-interactive Patient Monitor simulation.
+      </p>
+      <div className="flex justify-center gap-2 pt-2">
+        <Button variant="outline" size="sm" className="border-border" onClick={onBack}>
+          Back to catalog
+        </Button>
+        <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90"
+          onClick={() => (window.location.href = "/simulation/patient-monitor")}>
+          Open Patient Monitor <ArrowRight className="h-3.5 w-3.5 ml-1" />
+        </Button>
+      </div>
+    </div>
+  </div>
+);
+
 export default Simulation;
+
