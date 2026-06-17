@@ -384,12 +384,12 @@ const Simulation = () => {
       {/* Header */}
       <header className="h-14 border-b border-border bg-card flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")} className="text-muted-foreground hover:text-foreground hover:bg-accent">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/simulation")} className="text-muted-foreground hover:text-foreground hover:bg-accent">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <p className="accent-italic text-[11px] text-muted-foreground leading-none">Experiment 01</p>
-            <h1 className="text-sm text-foreground font-medium leading-tight mt-0.5">Patient Monitor Simulation</h1>
+            <p className="accent-italic text-[11px] text-muted-foreground leading-none">Experiment · {deviceId}</p>
+            <h1 className="text-sm text-foreground font-medium leading-tight mt-0.5">{deviceName} Simulation</h1>
           </div>
           {apneaAlarm && (
             <span className="flex items-center gap-1 text-xs text-warning bg-warning/10 border border-warning/40 px-2 py-0.5 rounded animate-pulse">
@@ -401,7 +401,7 @@ const Simulation = () => {
           <Button variant="ghost" size="sm" onClick={() => navigate("/community")} className="text-muted-foreground hover:text-primary hover:bg-accent text-xs hidden sm:flex">
             <MessageSquare className="h-4 w-4 mr-1" /> Discuss
           </Button>
-          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary hover:bg-accent text-xs hidden sm:flex">
+          <Button variant="ghost" size="sm" onClick={() => setShareOpen(true)} className="text-muted-foreground hover:text-primary hover:bg-accent text-xs hidden sm:flex">
             <Share2 className="h-4 w-4 mr-1" /> Share
           </Button>
           <Button variant="ghost" size="icon" onClick={() => setIsPlaying(!isPlaying)} className="text-muted-foreground hover:bg-accent">
@@ -413,6 +413,24 @@ const Simulation = () => {
           </Button>
         </div>
       </header>
+
+      {!isPatientMonitor && <ComingSoon deviceName={deviceName} onBack={() => navigate("/simulation")} />}
+      {isPatientMonitor && (<>
+
+      {/* Version tabs - open detailed modal on click */}
+      <div className="border-b border-border bg-card/60 px-4 py-2 shrink-0 flex justify-center">
+        <div className="inline-flex flex-wrap gap-1 bg-muted border border-border rounded-md p-1">
+          {VERSIONS.map((v) => (
+            <button
+              key={v.id}
+              onClick={() => setVersionModal(v.id)}
+              className="text-xs px-3 py-1.5 rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Version tabs - centered in workspace */}
       <div className="border-b border-border bg-card/60 px-4 py-2 shrink-0 flex justify-center">
