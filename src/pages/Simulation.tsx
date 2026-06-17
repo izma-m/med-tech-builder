@@ -432,18 +432,8 @@ const Simulation = () => {
         </div>
       </div>
 
-      {/* Version tabs - centered in workspace */}
-      <div className="border-b border-border bg-card/60 px-4 py-2 shrink-0 flex justify-center">
-        <Tabs value={version} onValueChange={(v) => setVersion(v as Version)}>
-          <TabsList className="bg-muted border border-border h-9 flex-wrap mx-auto">
-            {VERSIONS.map((v) => (
-              <TabsTrigger key={v.id} value={v.id} className="text-xs data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
-                {v.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-      </div>
+
+
 
       {/* Body */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 notebook-grid">
