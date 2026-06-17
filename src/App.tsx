@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import Simulation from "./pages/Simulation";
+import SimulationCatalog from "./pages/SimulationCatalog";
 import CircuitBuilder from "./pages/CircuitBuilder";
 import Progress from "./pages/Progress";
 import Saved from "./pages/Saved";
@@ -28,7 +29,8 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/simulation" element={<Simulation />} />
+          <Route path="/simulation" element={<SimulationCatalog />} />
+          <Route path="/simulation/:deviceId" element={<Simulation />} />
           <Route path="/circuit-builder" element={<CircuitBuilder />} />
           <Route path="/progress" element={<Progress />} />
           <Route path="/saved" element={<Saved />} />
