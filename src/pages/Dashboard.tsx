@@ -1,14 +1,17 @@
-import { Activity, Stethoscope, Monitor, Pill, HeartPulse, Accessibility, FlaskConical, CircuitBoard, BarChart3, FolderOpen, Settings, Home, Search, Bell, ChevronRight, Play, MessageSquare } from "lucide-react";
+import { useState } from "react";
+import { Activity, Stethoscope, Monitor, Pill, HeartPulse, Accessibility, FlaskConical, CircuitBoard, BarChart3, FolderOpen, Settings, Home, Search, Bell, ChevronRight, Play, MessageSquare, User } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import EcgMachineIcon from "@/components/EcgMachineIcon";
+import logoAsset from "@/assets/sim-ie-logo.png.asset.json";
 
 const navItems = [
   { label: "Home", icon: Home, path: "/dashboard" },
   { label: "Simulations", icon: Monitor, path: "/simulation" },
   { label: "Circuit Builder", icon: CircuitBoard, path: "/circuit-builder" },
   { label: "Community", icon: MessageSquare, path: "/community" },
+  { label: "My Profile", icon: User, path: "/profile" },
   { label: "My Progress", icon: BarChart3, path: "/progress" },
   { label: "Saved Projects", icon: FolderOpen, path: "/saved" },
   { label: "Settings", icon: Settings, path: "/settings" },
@@ -80,6 +83,20 @@ const recentSims = [
 const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [query, setQuery] = useState("");
+
+  const q = query.trim().toLowerCase();
+  const filteredCategories = categories
+    .map((cat) => {
+      const catMatch = cat.title.toLowerCase().includes(q);
+      const items = q
+        ? cat.items.filter(
+            (it) => catMatch || it.name.toLowerCase().includes(q) || it.desc.toLowerCase().includes(q)
+          )
+        : cat.items;
+      return { ...cat, items };
+    })
+    .filter((cat) => !q || cat.items.length > 0 || cat.title.toLowerCase().includes(q));
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -87,10 +104,10 @@ const Dashboard = () => {
       <aside className="w-60 bg-sidebar border-r border-sidebar-border flex flex-col shrink-0">
         <div className="p-5 border-b border-sidebar-border">
           <div className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-primary" />
+            <img src={logoAsset.url} alt="Sim-ie logo" className="h-6 w-6 object-contain" />
             <span className="text-lg text-foreground font-medium">Sim-ie</span>
           </div>
-          <p className="accent-italic text-xs text-muted-foreground mt-1 ml-7">lab notebook</p>
+          <p className="accent-italic text-xs text-muted-foreground mt-1 ml-8">lab notebook</p>
         </div>
         <nav className="flex-1 p-3 space-y-0.5">
           {navItems.map((item) => {
@@ -125,7 +142,12 @@ const Dashboard = () => {
         <header className="h-16 border-b border-border bg-background/80 backdrop-blur-sm flex items-center justify-between px-6 shrink-0">
           <div className="relative w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search simulations…  e.g. ECG, MRI" className="pl-10 bg-card border-border" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search simulations…  e.g. ECG, MRI, Infusion Pump"
+              className="pl-10 bg-card border-border"
+            />
           </div>
           <div className="flex items-center gap-4">
             <button className="relative text-muted-foreground hover:text-foreground transition-colors">
@@ -159,7 +181,7 @@ const Dashboard = () => {
                 <p className="text-sm text-muted-foreground mt-1 mb-4 max-w-md">
                   Sensor integration · signal amplification · real-time monitoring
                 </p>
-                <Button onClick={() => navigate("/simulation")} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                <Button onClick={() => navigate("/simulation/patient-monitor")} className="bg-primary text-primary-foreground hover:bg-primary/90">
                   <Play className="h-4 w-4 mr-2" /> Start Experiment
                 </Button>
               </div>
@@ -171,33 +193,45 @@ const Dashboard = () => {
 
           {/* Categories */}
           <section className="animate-fade-in max-w-5xl" style={{ animationDelay: "0.1s", opacity: 0 }}>
-            <div className="flex items-baseline justify-between mb-4">
+            <div className="flex items-baseline justify-between mb-1">
               <h2 className="accent-italic text-lg text-foreground">Simulation Categories</h2>
-              <span className="text-xs text-muted-foreground">{categories.length} sections</span>
+              <span className="text-xs text-muted-foreground">{filteredCategories.length} of {categories.length} sections</span>
             </div>
+            <p className="text-xs text-muted-foreground italic mb-4 max-w-2xl">
+              there are 6 main categories in which the medical devices are classified based on their function
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {categories.map((cat) => (
-                <div key={cat.title} className="paper-card p-5 hover-tint cursor-pointer group">
+              {filteredCategories.map((cat) => (
+                <div key={cat.title} className="paper-card p-5 hover-tint group">
                   <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border">
                     <cat.icon className="h-4 w-4 text-primary" strokeWidth={1.5} />
                     <h3 className="accent-italic text-foreground">{cat.title}</h3>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     {cat.items.map((item) => (
-                      <div key={item.name} className="flex items-center justify-between text-sm">
+                      <button
+                        key={item.name}
+                        onClick={() => navigate(`/simulation/${item.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`)}
+                        className="w-full text-left flex items-center justify-between px-2 py-1.5 rounded hover-tint"
+                      >
                         <div>
-                          <p className="text-foreground">{item.name}</p>
+                          <p className="text-sm text-foreground">{item.name}</p>
                           <p className="text-[11px] text-muted-foreground">{item.desc}</p>
                         </div>
                         <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-                      </div>
+                      </button>
                     ))}
                   </div>
-                  <Button variant="ghost" size="sm" className="w-full mt-4 text-primary hover:bg-accent" onClick={() => navigate("/simulation")}>
-                    Open
+                  <Button variant="ghost" size="sm" className="w-full mt-3 text-primary hover:bg-accent" onClick={() => navigate("/simulation")}>
+                    Open catalog
                   </Button>
                 </div>
               ))}
+              {filteredCategories.length === 0 && (
+                <div className="col-span-full paper-card p-8 text-center">
+                  <p className="text-sm text-muted-foreground">No simulations match "{query}".</p>
+                </div>
+              )}
             </div>
           </section>
 
