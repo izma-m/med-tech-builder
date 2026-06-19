@@ -52,6 +52,27 @@ const badges = [
 const Profile = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("projects");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  // Mock connection status; in a real app this would come from data
+  const isConnected = false;
+  const githubHandle = "janedoe";
+
+  const onAvatar = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setAvatarUrl(URL.createObjectURL(f));
+    toast.success("Profile picture updated");
+  };
+
+  const onMessage = () => {
+    if (isConnected) {
+      navigate("/community");
+      toast.success("Opening direct message…");
+    } else {
+      toast.error("Please send a connection request first before sending a message.");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background notebook-grid">
@@ -59,7 +80,7 @@ const Profile = () => {
         <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")} className="text-muted-foreground hover:bg-accent mr-3">
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <p className="accent-italic text-[11px] text-muted-foreground leading-none">Researcher Profile</p>
+        <p className="accent-italic text-[11px] text-muted-foreground leading-none">My Profile</p>
       </header>
 
       <ScrollArea className="h-[calc(100vh-56px)]">
@@ -68,21 +89,39 @@ const Profile = () => {
           <div className="paper-card p-8">
             <div className="flex items-start justify-between gap-6">
               <div className="flex items-start gap-5">
-                <div className="w-20 h-20 rounded-full border border-border bg-accent flex items-center justify-center text-2xl text-accent-foreground">
-                  JD
-                </div>
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  className="relative w-20 h-20 rounded-full border border-border bg-accent flex items-center justify-center text-2xl text-accent-foreground overflow-hidden group hover:border-primary transition-colors"
+                  title="Click to upload a profile picture"
+                >
+                  {avatarUrl
+                    ? <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                    : <span>JD</span>}
+                  <span className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <Camera className="h-5 w-5 text-white" />
+                  </span>
+                </button>
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onAvatar} />
                 <div>
                   <h2 className="text-xl text-foreground font-medium">Jane Doe</h2>
                   <p className="accent-italic text-sm text-primary mt-0.5">Biomedical Engineering Student</p>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> Ziauddin University</span>
                     <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> Joined Jan 2025</span>
-                    <span className="flex items-center gap-1"><Link2 className="h-3 w-3" /> github.com/janedoe</span>
+                    <a
+                      href={`https://github.com/${githubHandle}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-primary hover:underline"
+                    >
+                      <Link2 className="h-3 w-3" /> github.com/{githubHandle}
+                    </a>
                   </div>
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="border-border hover:bg-accent">
+                <Button variant="outline" size="sm" onClick={onMessage} className="border-border hover:bg-accent">
                   <MessageSquare className="h-4 w-4 mr-1.5" /> Message
                 </Button>
                 <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
