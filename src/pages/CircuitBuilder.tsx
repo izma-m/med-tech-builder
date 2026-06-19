@@ -172,7 +172,7 @@ const Symbol = ({ type, className = "" }: { type: CompType; className?: string }
       return (
         <svg viewBox="0 0 80 40" className={className}>
           <line x1="2" y1="20" x2="32" y2="20" stroke={s} strokeWidth={sw} />
-          <line x1="32" y1="10" x2="32" y2="30" stroke={s} strokeWidth={sw} strokeWidth={2.5} />
+          <line x1="32" y1="10" x2="32" y2="30" stroke={s} strokeWidth={2.5} />
           <line x1="40" y1="14" x2="40" y2="26" stroke={s} strokeWidth={sw} />
           <line x1="40" y1="20" x2="78" y2="20" stroke={s} strokeWidth={sw} />
           <text x="20" y="12" fontSize="8" fill={s}>+</text>
