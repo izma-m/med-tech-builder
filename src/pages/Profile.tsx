@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft, MapPin, Link2, Calendar, UserPlus, MessageSquare,
-  Award, Heart, CircuitBoard, Activity, Brain, Eye, Users, BarChart3, BookOpen,
+  Award, Heart, CircuitBoard, Activity, Brain, Eye, Users, BarChart3, BookOpen, Camera,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "sonner";
 
 const skills = [
   { name: "ECG Analysis", level: 82, icon: Heart },
